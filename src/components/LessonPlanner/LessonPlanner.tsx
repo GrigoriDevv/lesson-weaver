@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { BookOpen, Clock, Sparkles, FileText, Key, Download, Copy } from 'lucide-react';
-import { useGemini } from './useGemini';
+import { BookOpen, Clock, Sparkles, FileText, Download, Copy, Presentation } from 'lucide-react';
+import { useApi } from './useApi';
 import { LessonPlan } from './types';
+import SlidePreview from './SlidePreview';
 import {
   Container,
   Header,
@@ -23,8 +24,6 @@ import {
   TimeBadge,
   LessonContent,
   TotalTime,
-  ApiKeyInput,
-  ApiKeyLabel,
   EmptyState,
   ErrorMessage,
   SkeletonLoader,
@@ -34,20 +33,35 @@ import {
 } from './styles';
 
 const LessonPlanner: React.FC = () => {
-  const [apiKey, setApiKey] = useState('');
   const [content, setContent] = useState('');
   const [subject, setSubject] = useState('');
   const [totalTime, setTotalTime] = useState(50);
   const [lessonPlan, setLessonPlan] = useState<LessonPlan | null>(null);
+  const [showSlidePreview, setShowSlidePreview] = useState(false);
+  const [gammaResult, setGammaResult] = useState<{
+    success: boolean;
+    url?: string;
+    content?: string;
+    gammaUrl?: string;
+    message?: string;
+  } | null>(null);
 
-  const { generateLessonPlan, isLoading, error, clearError } = useGemini();
+  const { generateLessonPlan, generateSlides, isLoading, isGeneratingSlides, error, clearError } = useApi();
 
   const handleGenerate = async () => {
     clearError();
-    const plan = await generateLessonPlan(apiKey, content, totalTime, subject);
+    const plan = await generateLessonPlan(content, totalTime, subject);
     if (plan) {
       setLessonPlan(plan);
     }
+  };
+
+  const handleGenerateSlides = async () => {
+    if (!lessonPlan) return;
+    clearError();
+    const result = await generateSlides(lessonPlan);
+    setGammaResult(result);
+    setShowSlidePreview(true);
   };
 
   const handleExport = () => {
@@ -106,7 +120,7 @@ const LessonPlanner: React.FC = () => {
       <Header>
         <Title>ClassBuddy</Title>
         <Subtitle>
-          Transforme seu conteúdo em planos de aula estruturados com ClassBuddy
+          Transforme seu conteúdo em planos de aula estruturados com Gemini AI
         </Subtitle>
       </Header>
 
@@ -116,19 +130,6 @@ const LessonPlanner: React.FC = () => {
             <FileText size={20} />
             Configuração
           </PanelTitle>
-
-          <ApiKeyInput>
-            <ApiKeyLabel>
-              <Key size={16} />
-              Chave da API Gemini (Google AI Studio)
-            </ApiKeyLabel>
-            <Input
-              type="password"
-              placeholder="Insira sua API Key do Gemini..."
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-          </ApiKeyInput>
 
           <InputGroup>
             <Label>Disciplina / Tema (opcional)</Label>
@@ -248,6 +249,27 @@ Exemplo:
                   <Download size={14} style={{ marginRight: 6 }} />
                   Exportar .txt
                 </ExportButton>
+                <ExportButton 
+                  onClick={handleGenerateSlides} 
+                  disabled={isGeneratingSlides}
+                  style={{ 
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2))',
+                    borderColor: 'rgba(139, 92, 246, 0.5)',
+                    color: '#a78bfa'
+                  }}
+                >
+                  {isGeneratingSlides ? (
+                    <>
+                      <LoadingSpinner style={{ width: 14, height: 14, marginRight: 6 }} />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <Presentation size={14} style={{ marginRight: 6 }} />
+                      Gerar Slides
+                    </>
+                  )}
+                </ExportButton>
               </ButtonGroup>
             </LessonPlanContainer>
           ) : (
@@ -261,6 +283,14 @@ Exemplo:
           )}
         </Panel>
       </MainContent>
+
+      {showSlidePreview && lessonPlan && (
+        <SlidePreview 
+          lessonPlan={lessonPlan}
+          gammaResult={gammaResult}
+          onClose={() => setShowSlidePreview(false)}
+        />
+      )}
     </Container>
   );
 };
