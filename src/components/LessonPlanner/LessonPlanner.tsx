@@ -161,12 +161,12 @@ const LessonPlanner: React.FC = () => {
             <TextArea
               placeholder="Cole aqui o conteúdo que deseja transformar em plano de aula...
 
-Exemplo:
-- Texto de um livro didático
-- Anotações de estudo
-- Tópicos que deseja abordar
-- Links de referência
-- Resumo de vídeo-aula"
+              Exemplo:
+              - Texto de um livro didático
+              - Anotações de estudo
+              - Tópicos que deseja abordar
+              - Links de referência
+              - Resumo de vídeo-aula"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
