@@ -22,7 +22,7 @@ const pulse = keyframes`
 
 export const Container = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%,rgb(110, 147, 250) 50%,rgb(12, 26, 155) 100%);
   padding: 2rem;
   color: #e8e8e8;
 `;

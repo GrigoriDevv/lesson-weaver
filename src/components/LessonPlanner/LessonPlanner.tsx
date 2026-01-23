@@ -104,9 +104,9 @@ const LessonPlanner: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>📚 Planejador de Aulas IA</Title>
+        <Title>ClassBuddy</Title>
         <Subtitle>
-          Transforme seu conteúdo em planos de aula estruturados com Gemini AI
+          Transforme seu conteúdo em planos de aula estruturados com ClassBuddy
         </Subtitle>
       </Header>
 
