@@ -5,8 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -15,68 +13,76 @@ serve(async (req) => {
   try {
     const { content, totalTime, subject } = await req.json();
     
-    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    const apiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!apiKey) {
-      throw new Error('GEMINI_API_KEY not configured');
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     if (!content || content.trim().length === 0) {
       throw new Error('Conteúdo é obrigatório');
     }
 
-    const prompt = `Você é um especialista em pedagogia e planejamento de aulas. 
-    Analise o conteúdo fornecido e crie um plano de aula estruturado.
+    const systemPrompt = `Você é um especialista em pedagogia e planejamento de aulas. 
+Analise o conteúdo fornecido e crie um plano de aula estruturado.
 
-    Conteúdo para análise:
-    ${content}
-
-    ${subject ? `Disciplina/Tema: ${subject}` : ''}
-    Tempo total disponível: ${totalTime} minutos
-
-    Crie um plano de aula em formato JSON com a seguinte estrutura:
+Crie um plano de aula em formato JSON com a seguinte estrutura:
+{
+  "subject": "Nome da disciplina/tema",
+  "objective": "Objetivo principal da aula",
+  "sections": [
     {
-      "subject": "Nome da disciplina/tema",
-      "objective": "Objetivo principal da aula",
-      "sections": [
-        {
-          "title": "Título da seção",
-          "content": "Descrição detalhada do que será abordado",
-          "duration": número em minutos,
-          "activities": ["atividade 1", "atividade 2"]
-        }
-      ],
-      "totalDuration": soma total dos minutos
+      "title": "Título da seção",
+      "content": "Descrição detalhada do que será abordado",
+      "duration": número em minutos,
+      "activities": ["atividade 1", "atividade 2"]
     }
+  ],
+  "totalDuration": soma total dos minutos
+}
 
-    Distribua o tempo de forma equilibrada entre as seções.
-    A soma das durações deve ser igual a ${totalTime} minutos.
-    Inclua pelo menos 3 seções: introdução, desenvolvimento e conclusão.
-    Responda APENAS com o JSON, sem markdown ou explicações.`;
+Distribua o tempo de forma equilibrada entre as seções.
+Inclua pelo menos 3 seções: introdução, desenvolvimento e conclusão.
+Responda APENAS com o JSON, sem markdown ou explicações.`;
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const userPrompt = `Conteúdo para análise:
+${content}
+
+${subject ? `Disciplina/Tema: ${subject}` : ''}
+Tempo total disponível: ${totalTime} minutos
+
+A soma das durações deve ser igual a ${totalTime} minutos.`;
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 2048,
-        },
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
       }),
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Limite de requisições excedido. Tente novamente em alguns segundos.');
+      }
+      if (response.status === 402) {
+        throw new Error('Créditos insuficientes. Adicione créditos no workspace.');
+      }
       const errorText = await response.text();
-      throw new Error(`Gemini API error: ${errorText}`);
+      throw new Error(`AI Gateway error: ${errorText}`);
     }
 
     const data = await response.json();
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    let text = data.choices?.[0]?.message?.content;
 
     if (!text) {
-      throw new Error('Resposta vazia da API Gemini');
+      throw new Error('Resposta vazia da API');
     }
 
     // Remove markdown code blocks if present
