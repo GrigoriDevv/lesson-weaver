@@ -100,6 +100,11 @@ const LessonPlanner: React.FC = () => {
               <option value="devops">DevOps</option>
               <option value="mobile">Desenvolvimento Mobile</option>
               <option value="ux-ui">UX/UI Design</option>
+              <option value="edicao-video">Edição de Vídeo</option>
+              <option value="motion-graphics">Motion Graphics</option>
+              <option value="producao-audiovisual">Produção Audiovisual</option>
+              <option value="efeitos-visuais">Efeitos Visuais (VFX)</option>
+              <option value="animacao">Animação Digital</option>
             </Select>
           </InputGroup>
 
