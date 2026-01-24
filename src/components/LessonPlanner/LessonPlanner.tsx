@@ -90,19 +90,16 @@ const LessonPlanner: React.FC = () => {
               onChange={(e) => setSubject(e.target.value)}
             >
               <option value="">Selecione a disciplina</option>
-              <option value="matematica">Matemática</option>
-              <option value="portugues">Português</option>
-              <option value="historia">História</option>
-              <option value="geografia">Geografia</option>
-              <option value="ciencias">Ciências</option>
-              <option value="fisica">Física</option>
-              <option value="quimica">Química</option>
-              <option value="biologia">Biologia</option>
-              <option value="ingles">Inglês</option>
-              <option value="artes">Artes</option>
-              <option value="educacao-fisica">Educação Física</option>
-              <option value="filosofia">Filosofia</option>
-              <option value="sociologia">Sociologia</option>
+              <option value="programacao">Programação</option>
+              <option value="desenvolvimento-web">Desenvolvimento Web</option>
+              <option value="banco-de-dados">Banco de Dados</option>
+              <option value="redes">Redes de Computadores</option>
+              <option value="seguranca">Segurança da Informação</option>
+              <option value="inteligencia-artificial">Inteligência Artificial</option>
+              <option value="cloud-computing">Cloud Computing</option>
+              <option value="devops">DevOps</option>
+              <option value="mobile">Desenvolvimento Mobile</option>
+              <option value="ux-ui">UX/UI Design</option>
             </Select>
           </InputGroup>
 
