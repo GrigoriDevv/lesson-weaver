@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { BookOpen, Sparkles, Clock, FileText, Presentation } from 'lucide-react';
+import { BookOpen, Sparkles, Clock, FileText, Presentation, Save } from 'lucide-react';
 import { useApi } from './useApi';
+import { useLessonHistory } from './useLessonHistory';
 import SlidePreview from './SlidePreview';
+import LessonHistory from './LessonHistory';
 import { LessonPlan } from './types';
 import {
   Container,
@@ -37,6 +39,7 @@ const LessonPlanner: React.FC = () => {
   const [subject, setSubject] = useState('');
   const [lessonPlan, setLessonPlan] = useState<LessonPlan | null>(null);
   const [showSlidePreview, setShowSlidePreview] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [gammaResult, setGammaResult] = useState<{
     success: boolean;
     url?: string;
@@ -46,13 +49,28 @@ const LessonPlanner: React.FC = () => {
   } | null>(null);
 
   const { generateLessonPlan, generateSlides, isLoading, isGeneratingSlides, error, clearError } = useApi();
+  const { history, saveLesson, deleteLesson, clearHistory } = useLessonHistory();
 
   const handleGenerate = async () => {
     clearError();
+    setIsSaved(false);
     const plan = await generateLessonPlan(content, totalTime, subject);
     if (plan) {
       setLessonPlan(plan);
     }
+  };
+
+  const handleSaveLesson = () => {
+    if (lessonPlan) {
+      saveLesson(lessonPlan);
+      setIsSaved(true);
+    }
+  };
+
+  const handleSelectFromHistory = (plan: LessonPlan) => {
+    setLessonPlan(plan);
+    setSubject(plan.subject);
+    setIsSaved(true);
   };
 
   const handleGenerateSlides = async () => {
@@ -125,7 +143,7 @@ const LessonPlanner: React.FC = () => {
             <TextArea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Descreva o conteúdo que será abordado na aula. Por exemplo: 'Equações do segundo grau - conceitos básicos, fórmula de Bhaskara e resolução de problemas práticos'"
+              placeholder="Descreva o conteúdo que será abordado na aula. Por exemplo: 'Introdução ao React - componentes, props e estado'"
             />
           </InputGroup>
 
@@ -147,6 +165,13 @@ const LessonPlanner: React.FC = () => {
               </>
             )}
           </Button>
+
+          <LessonHistory
+            history={history}
+            onSelect={handleSelectFromHistory}
+            onDelete={deleteLesson}
+            onClear={clearHistory}
+          />
         </Panel>
 
         <Panel>
@@ -193,6 +218,14 @@ const LessonPlanner: React.FC = () => {
               </TotalTime>
 
               <ButtonGroup>
+                <Button
+                  $variant="secondary"
+                  onClick={handleSaveLesson}
+                  disabled={isSaved}
+                >
+                  <Save size={20} />
+                  {isSaved ? 'Salvo!' : 'Salvar'}
+                </Button>
                 <Button
                   $variant="secondary"
                   onClick={handleGenerateSlides}
