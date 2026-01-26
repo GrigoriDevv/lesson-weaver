@@ -1,7 +1,11 @@
-import { LessonPlanner } from '@/components/LessonPlanner';
+import { LessonPlanner } from "@/components/LessonPlanner";
 
 const Index = () => {
-  return <LessonPlanner />;
+  return (
+    <>
+      <LessonPlanner />
+    </>
+  );
 };
 
 export default Index;

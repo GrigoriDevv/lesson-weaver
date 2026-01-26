@@ -40,6 +40,14 @@ import {
   ButtonGroup,
 } from "./styles";
 import jsPDF from "jspdf";
+import { set } from "date-fns";
+import { extractTextFromPDF, truncatePDFText } from "@/lib/pdfService";
+import {
+  generateGammaPresentation,
+  generateLessonContent,
+  getSavedLessons,
+  saveLessonLocally,
+} from "@/lib/iaService";
 
 const LessonPlanner: React.FC = () => {
   const [content, setContent] = useState("");
@@ -48,6 +56,10 @@ const LessonPlanner: React.FC = () => {
   const [lessonPlan, setLessonPlan] = useState<LessonPlan | null>(null);
   const [showSlidePreview, setShowSlidePreview] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfText, setPdfText] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [savedLessons, setSavedLessons] = useState(getSavedLessons());
   const [gammaResult, setGammaResult] = useState<{
     success: boolean;
     url?: string;
@@ -95,6 +107,54 @@ const LessonPlanner: React.FC = () => {
     if (result) {
       setGammaResult(result);
       setShowSlidePreview(true);
+    }
+  };
+
+  const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || file.type !== "application/pdf") {
+      alert("Envie apenas PDF");
+      return;
+    }
+    setPdfFile(file);
+    setLoading(true);
+
+    try {
+      const text = await extractTextFromPDF(file);
+      setPdfText(truncatePDFText(text));
+      console.log("Texto extraído do PDF:", pdfText.substring(0, 200));
+    } catch (error) {
+      alert("Erro ao processar o PDF. Tente novamente.");
+      setPdfText("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGeneratePdf = async () => {
+    setLoading(true);
+    try {
+      const sourceText = pdfText
+        ? `\n\nBaseie-se nesta fonte de pesquisa:\n${pdfText}`
+        : "";
+      const fullPrompt = `Gere uma lição educativa sobre: ${prompt}${sourceText}`;
+      const content = await generateLessonContent(fullPrompt);
+      const presentationUrl = await generateGammaPresentation(
+        content,
+        `Lição: ${prompt}`,
+      );
+      const lesson = {
+        title: `Lição: ${prompt}`,
+        content: content,
+        presentationUrl: presentationUrl,
+      };
+      saveLessonLocally(lesson);
+      setGammaResult({ success: true, url: presentationUrl });
+      setSavedLessons(getSavedLessons());
+    } catch (error) {
+      alert("Erro ao gerar a lição. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -189,6 +249,23 @@ const LessonPlanner: React.FC = () => {
             onClick={handleGenerate}
             disabled={isLoading || !content.trim()}
           >
+            <div className="mb-4">
+              <Label className="block text-sm font-medium mb-2">
+                Fonte de Pesquisa (PDF opcional)
+              </Label>
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={handlePDFUpload}
+                className="cursor-pointer"
+              />
+              {pdfText && (
+                <p className="mt-2 text-sm text-green-600">
+                  PDF carregado! {pdfText.length} caracteres extraídos (usado
+                  como fonte).
+                </p>
+              )}
+            </div>
             {isLoading ? (
               <>
                 <LoadingSpinner />
@@ -201,9 +278,7 @@ const LessonPlanner: React.FC = () => {
               </>
             )}
           </Button>
-          <Button onClick={exportToPDF} className="ml-4">
-            Exportar para PDF
-          </Button>
+
           {lessonPlan && (
             <div className="mt-4">
               <h2 className="text-lg font-bold">Conteúdo Gerado:</h2>
@@ -217,9 +292,7 @@ const LessonPlanner: React.FC = () => {
                 Ver Apresentação no Gamma
               </a>
               {/* Novo botão para exportar a lição gerada */}
-              <Button onClick={exportToPDF} className="ml-4">
-                Exportar para PDF
-              </Button>
+              <Button onClick={exportToPDF}>Exportar para PDF</Button>
             </div>
           )}
 
