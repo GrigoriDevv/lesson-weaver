@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
-import { BookOpen, Sparkles, Clock, FileText, Presentation, Save } from 'lucide-react';
-import { useApi } from './useApi';
-import { useLessonHistory } from './useLessonHistory';
-import SlidePreview from './SlidePreview';
-import LessonHistory from './LessonHistory';
-import { LessonPlan } from './types';
+import React, { useState } from "react";
+import {
+  BookOpen,
+  Sparkles,
+  Clock,
+  FileText,
+  Presentation,
+  Save,
+} from "lucide-react";
+import { useApi } from "./useApi";
+import { useLessonHistory } from "./useLessonHistory";
+import SlidePreview from "./SlidePreview";
+import LessonHistory from "./LessonHistory";
+import { LessonPlan } from "./types";
 import {
   Container,
   Header,
@@ -31,12 +38,13 @@ import {
   ErrorMessage,
   SkeletonLoader,
   ButtonGroup,
-} from './styles';
+} from "./styles";
+import jsPDF from "jspdf";
 
 const LessonPlanner: React.FC = () => {
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [totalTime, setTotalTime] = useState(50);
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState("");
   const [lessonPlan, setLessonPlan] = useState<LessonPlan | null>(null);
   const [showSlidePreview, setShowSlidePreview] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -48,8 +56,16 @@ const LessonPlanner: React.FC = () => {
     message?: string;
   } | null>(null);
 
-  const { generateLessonPlan, generateSlides, isLoading, isGeneratingSlides, error, clearError } = useApi();
-  const { history, saveLesson, deleteLesson, clearHistory } = useLessonHistory();
+  const {
+    generateLessonPlan,
+    generateSlides,
+    isLoading,
+    isGeneratingSlides,
+    error,
+    clearError,
+  } = useApi();
+  const { history, saveLesson, deleteLesson, clearHistory } =
+    useLessonHistory();
 
   const handleGenerate = async () => {
     clearError();
@@ -82,12 +98,30 @@ const LessonPlanner: React.FC = () => {
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Lição: ${lessonPlan?.objective || ""}`, 10, 20);
+
+    const contentLines = doc.splitTextToSize(lessonPlan?.objective || "", 170);
+    doc.text(contentLines, 10, 30);
+    doc.setTextColor(0, 0, 255);
+    doc.textWithLink("Ver apresentação completa...", 10, 50, {
+      url: gammaResult?.url || "",
+    });
+    doc.save(`${lessonPlan?.objective.replace(/\s+/g, "_")}.pdf`);
+  };
+
   return (
     <Container>
       <Header>
         <Title>
-          <BookOpen size={32} style={{ display: 'inline', marginRight: '0.5rem' }} />
-          Planejador de Aulas com IA
+          <BookOpen
+            size={32}
+            style={{ display: "inline", marginRight: "0.5rem" }}
+          />
+          ClassBuddy
         </Title>
         <Subtitle>
           Crie planos de aula estruturados e personalizados em segundos
@@ -113,7 +147,9 @@ const LessonPlanner: React.FC = () => {
               <option value="banco-de-dados">Banco de Dados</option>
               <option value="redes">Redes de Computadores</option>
               <option value="seguranca">Segurança da Informação</option>
-              <option value="inteligencia-artificial">Inteligência Artificial</option>
+              <option value="inteligencia-artificial">
+                Inteligência Artificial
+              </option>
               <option value="cloud-computing">Cloud Computing</option>
               <option value="devops">DevOps</option>
               <option value="mobile">Desenvolvimento Mobile</option>
@@ -165,6 +201,27 @@ const LessonPlanner: React.FC = () => {
               </>
             )}
           </Button>
+          <Button onClick={exportToPDF} className="ml-4">
+            Exportar para PDF
+          </Button>
+          {lessonPlan && (
+            <div className="mt-4">
+              <h2 className="text-lg font-bold">Conteúdo Gerado:</h2>
+              <p>{lessonPlan.objective.substring(0, 200)}...</p>
+              <a
+                href={lessonPlan.objective}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500"
+              >
+                Ver Apresentação no Gamma
+              </a>
+              {/* Novo botão para exportar a lição gerada */}
+              <Button onClick={exportToPDF} className="ml-4">
+                Exportar para PDF
+              </Button>
+            </div>
+          )}
 
           <LessonHistory
             history={history}
@@ -205,8 +262,11 @@ const LessonPlanner: React.FC = () => {
                   </LessonHeader>
                   <LessonContent>{section.content}</LessonContent>
                   {section.activities && section.activities.length > 0 && (
-                    <LessonContent style={{ marginTop: '0.5rem', fontStyle: 'italic' }}>
-                      <strong>Atividades:</strong> {section.activities.join(', ')}
+                    <LessonContent
+                      style={{ marginTop: "0.5rem", fontStyle: "italic" }}
+                    >
+                      <strong>Atividades:</strong>{" "}
+                      {section.activities.join(", ")}
                     </LessonContent>
                   )}
                 </LessonCard>
@@ -224,7 +284,7 @@ const LessonPlanner: React.FC = () => {
                   disabled={isSaved}
                 >
                   <Save size={20} />
-                  {isSaved ? 'Salvo!' : 'Salvar'}
+                  {isSaved ? "Salvo!" : "Salvar"}
                 </Button>
                 <Button
                   $variant="secondary"
@@ -248,7 +308,10 @@ const LessonPlanner: React.FC = () => {
           ) : (
             <EmptyState>
               <BookOpen size={64} />
-              <p>Configure sua aula e clique em "Gerar Plano de Aula" para começar</p>
+              <p>
+                Configure sua aula e clique em "Gerar Plano de Aula" para
+                começar
+              </p>
             </EmptyState>
           )}
         </Panel>
