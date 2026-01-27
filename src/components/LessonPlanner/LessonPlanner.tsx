@@ -6,6 +6,7 @@ import {
   FileText,
   Presentation,
   Save,
+  Upload,
 } from "lucide-react";
 import { useApi } from "./useApi";
 import { useLessonHistory } from "./useLessonHistory";
@@ -39,6 +40,10 @@ import {
   SkeletonLoader,
   ButtonGroup,
   ActionButton,
+  PDFUploadSection,
+  PDFUploadLabel,
+  PDFUploadArea,
+  PDFClearButton,
 } from "./styles";
 import jsPDF from "jspdf";
 import { set } from "date-fns";
@@ -380,27 +385,50 @@ const LessonPlanner: React.FC = () => {
 
           {error && <ErrorMessage>{error}</ErrorMessage>}
 
+          <PDFUploadSection>
+            <PDFUploadLabel>
+              <FileText size={18} />
+              Fonte de Pesquisa (PDF opcional)
+            </PDFUploadLabel>
+            <PDFUploadArea $hasFile={!!pdfText}>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handlePDFUpload}
+                id="pdf-upload"
+              />
+              <label htmlFor="pdf-upload">
+                {loading ? (
+                  <>
+                    <LoadingSpinner />
+                    <span>Processando PDF...</span>
+                  </>
+                ) : pdfText ? (
+                  <>
+                    <FileText size={24} />
+                    <span>PDF carregado!</span>
+                    <small>{pdfText.length.toLocaleString()} caracteres extraídos</small>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={24} />
+                    <span>Clique para enviar um PDF</span>
+                    <small>O conteúdo será usado como base para o plano</small>
+                  </>
+                )}
+              </label>
+              {pdfText && (
+                <PDFClearButton onClick={() => { setPdfText(""); setPdfFile(null); }}>
+                  ✕
+                </PDFClearButton>
+              )}
+            </PDFUploadArea>
+          </PDFUploadSection>
+
           <Button
             onClick={handleGenerate}
             disabled={isLoading || !content.trim()}
           >
-            <div className="mb-4">
-              <Label className="block text-sm font-medium mb-2">
-                Fonte de Pesquisa (PDF opcional)
-              </Label>
-              <Input
-                type="file"
-                accept="application/pdf"
-                onChange={handlePDFUpload}
-                className="cursor-pointer"
-              />
-              {pdfText && (
-                <p className="mt-2 text-sm text-green-600">
-                  PDF carregado! {pdfText.length} caracteres extraídos (usado
-                  como fonte).
-                </p>
-              )}
-            </div>
             {isLoading ? (
               <>
                 <LoadingSpinner />
@@ -413,26 +441,6 @@ const LessonPlanner: React.FC = () => {
               </>
             )}
           </Button>
-
-          {lessonPlan && (
-            <div className="mt-4">
-              <h2 className="text-lg font-bold">Conteúdo Gerado:</h2>
-              <p>{lessonPlan.objective.substring(0, 200)}...</p>
-              <a
-                href={lessonPlan.objective}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500"
-              >
-                Ver Apresentação no Gamma
-              </a>
-              {/* Novo botão para exportar a lição gerada */}
-              <Button onClick={exportToPDF}>Exportar para PDF</Button>
-              <Button onClick={handleGeneratePdf} disabled={loading}>
-                Gerar PDF
-              </Button>
-            </div>
-          )}
 
           <LessonHistory
             history={history}
