@@ -1,4 +1,4 @@
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes } from "styled-components";
 
 const fadeIn = keyframes`
   from {
@@ -22,7 +22,12 @@ const pulse = keyframes`
 
 export const Container = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%,rgb(110, 147, 250) 50%,rgb(12, 26, 155) 100%);
+  background: linear-gradient(
+    135deg,
+    #cfcfcf 0%,
+    rgb(231, 231, 231) 50%,
+    rgb(221, 221, 221) 100%
+  );
   padding: 2rem;
   color: #e8e8e8;
 `;
@@ -36,7 +41,7 @@ export const Header = styled.header`
 export const Title = styled.h1`
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #00d9ff 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #344266 0%, #3758a1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -44,8 +49,9 @@ export const Title = styled.h1`
 `;
 
 export const Subtitle = styled.p`
-  color: #94a3b8;
+  color: #000000;
   font-size: 1.1rem;
+  font-weight: 500;
 `;
 
 export const MainContent = styled.main`
@@ -61,7 +67,7 @@ export const MainContent = styled.main`
 `;
 
 export const Panel = styled.section`
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.62);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
@@ -89,11 +95,13 @@ export const TextArea = styled.textarea`
   color: #e8e8e8;
   font-size: 1rem;
   resize: vertical;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #00d9ff;
+    border-color: #ebebeb;
     box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
   }
 
@@ -121,11 +129,13 @@ export const Input = styled.input`
   padding: 0.75rem 1rem;
   color: #e8e8e8;
   font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #00d9ff;
+    border-color: #ffffff;
     box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
   }
 
@@ -134,7 +144,7 @@ export const Input = styled.input`
   }
 `;
 
-export const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+export const Button = styled.button<{ $variant?: "primary" | "secondary" }>`
   width: 100%;
   padding: 0.875rem 1.5rem;
   border-radius: 12px;
@@ -147,16 +157,16 @@ export const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   justify-content: center;
   gap: 0.5rem;
 
-  ${({ $variant = 'primary' }) =>
-    $variant === 'primary'
+  ${({ $variant = "primary" }) =>
+    $variant === "primary"
       ? `
-    background: linear-gradient(135deg, #00d9ff 0%, #a855f7 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #a1a1a1 100%);
     border: none;
-    color: #0f172a;
+    color: #3b3b3b;
 
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+      box-shadow: 0 10px 30px rgba(70, 70, 70, 0.3);
     }
   `
       : `
@@ -200,11 +210,13 @@ export const LessonCard = styled.div`
   border-radius: 12px;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  transition: transform 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
 
   &:hover {
     transform: translateX(4px);
-    border-color: rgba(0, 217, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
   }
 `;
 
@@ -218,11 +230,11 @@ export const LessonHeader = styled.div`
 export const LessonTitle = styled.h3`
   font-size: 1.1rem;
   font-weight: 600;
-  color: #f1f5f9;
+  color: #f1f1f1;
 `;
 
 export const TimeBadge = styled.span`
-  background: linear-gradient(135deg, #00d9ff 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #575757 100%);
   color: #0f172a;
   font-size: 0.75rem;
   font-weight: 700;
@@ -237,8 +249,8 @@ export const LessonContent = styled.p`
 `;
 
 export const TotalTime = styled.div`
-  background: rgba(168, 85, 247, 0.1);
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: rgb(59, 59, 59);
+  border: 1px solid rgba(255, 255, 255, 0.92);
   border-radius: 12px;
   padding: 1rem;
   text-align: center;
@@ -247,14 +259,14 @@ export const TotalTime = styled.div`
   span {
     font-size: 1.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #00d9ff 0%, #a855f7 100%);
+    background: linear-gradient(135deg, #ffffffd0 0%, #aaaaaa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   p {
-    color: #94a3b8;
+    color: #e9e9e9;
     font-size: 0.875rem;
     margin-top: 0.25rem;
   }
@@ -324,12 +336,14 @@ export const Select = styled.select`
   color: #e8e8e8;
   font-size: 1rem;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #00d9ff;
-    box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+    border-color: #acacac;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
   }
 
   option {
@@ -340,8 +354,8 @@ export const Select = styled.select`
 
 export const ExportButton = styled.button`
   background: transparent;
-  border: 1px solid rgba(0, 217, 255, 0.5);
-  color: #00d9ff;
+  border: 1px solid rgba(218, 218, 218, 0.5);
+  color: #ffffff;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -349,7 +363,7 @@ export const ExportButton = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    background: rgba(0, 217, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
   }
 `;
 

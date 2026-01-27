@@ -179,7 +179,8 @@ const LessonPlanner: React.FC = () => {
         <Title>
           <BookOpen
             size={32}
-            style={{ display: "inline", marginRight: "0.5rem" }}
+            style={{ display: "inline", marginRight: "0.8rem" }}
+            color="black"
           />
           ClassBuddy
         </Title>
@@ -293,6 +294,9 @@ const LessonPlanner: React.FC = () => {
               </a>
               {/* Novo botão para exportar a lição gerada */}
               <Button onClick={exportToPDF}>Exportar para PDF</Button>
+              <Button onClick={handleGeneratePdf} disabled={loading}>
+                Gerar PDF
+              </Button>
             </div>
           )}
 
