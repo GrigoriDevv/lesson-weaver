@@ -368,7 +368,84 @@ export const ExportButton = styled.button`
 `;
 
 export const ButtonGroup = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const ActionButton = styled.button<{ $variant?: "save" | "pdf" | "slides" }>`
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  margin-top: 1rem;
+  border: none;
+
+  ${({ $variant }) => {
+    switch ($variant) {
+      case "save":
+        return `
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+          }
+        `;
+      case "pdf":
+        return `
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          color: white;
+          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+          }
+        `;
+      case "slides":
+        return `
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          color: white;
+          box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+          }
+        `;
+      default:
+        return `
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #e8e8e8;
+
+          &:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+          }
+        `;
+    }
+  }}
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
 `;

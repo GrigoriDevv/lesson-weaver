@@ -38,6 +38,7 @@ import {
   ErrorMessage,
   SkeletonLoader,
   ButtonGroup,
+  ActionButton,
 } from "./styles";
 import jsPDF from "jspdf";
 import { set } from "date-fns";
@@ -163,84 +164,143 @@ const LessonPlanner: React.FC = () => {
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
+    const margin = 20;
     const contentWidth = pageWidth - margin * 2;
-    let yPos = 20;
+    let yPos = 25;
+
+    // Header background
+    doc.setFillColor(55, 88, 161);
+    doc.rect(0, 0, pageWidth, 45, 'F');
 
     // Title
-    doc.setFontSize(20);
+    doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(59, 130, 246);
-    doc.text(lessonPlan.subject || "Plano de Aula", margin, yPos);
+    doc.setTextColor(255, 255, 255);
+    doc.text("PLANO DE AULA", margin, yPos);
     yPos += 12;
 
-    // Objective
+    // Subject
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "normal");
+    doc.text(lessonPlan.subject || "Aula", margin, yPos);
+    yPos += 25;
+
+    // Info box
+    doc.setFillColor(240, 240, 245);
+    doc.rect(margin, yPos - 5, contentWidth, 25, 'F');
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(11);
+    doc.text(`📅 Data: ${new Date().toLocaleDateString("pt-BR")}`, margin + 5, yPos + 5);
+    doc.text(`⏱️ Duração Total: ${lessonPlan.totalDuration} minutos`, margin + 80, yPos + 5);
+    doc.text(`📚 Seções: ${lessonPlan.sections.length}`, margin + 5, yPos + 15);
+    yPos += 30;
+
+    // Objective Section
+    doc.setFillColor(139, 92, 246);
+    doc.rect(margin, yPos, contentWidth, 8, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(0, 0, 0);
-    doc.text("🎯 Objetivo:", margin, yPos);
-    yPos += 7;
-    doc.setFont("helvetica", "normal");
-    const objectiveLines = doc.splitTextToSize(lessonPlan.objective, contentWidth);
-    doc.text(objectiveLines, margin, yPos);
-    yPos += objectiveLines.length * 6 + 8;
+    doc.text("🎯 OBJETIVO DA AULA", margin + 5, yPos + 6);
+    yPos += 15;
 
-    // Duration info
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Duração Total: ${lessonPlan.totalDuration} minutos`, margin, yPos);
-    yPos += 12;
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    const objectiveLines = doc.splitTextToSize(lessonPlan.objective, contentWidth - 10);
+    doc.text(objectiveLines, margin + 5, yPos);
+    yPos += objectiveLines.length * 6 + 15;
 
     // Sections
-    doc.setTextColor(0, 0, 0);
     lessonPlan.sections.forEach((section, index) => {
       // Check if we need a new page
-      if (yPos > 260) {
+      if (yPos > 240) {
         doc.addPage();
-        yPos = 20;
+        yPos = 25;
       }
 
-      // Section header
+      // Section header with number
+      doc.setFillColor(59, 130, 246);
+      doc.rect(margin, yPos, contentWidth, 10, 'F');
+      doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.setTextColor(139, 92, 246);
-      doc.text(`${index + 1}. ${section.title}`, margin, yPos);
+      doc.setFontSize(11);
+      doc.text(`${index + 1}. ${section.title.toUpperCase()}`, margin + 5, yPos + 7);
       
       // Duration badge
-      doc.setFontSize(10);
-      doc.setTextColor(59, 130, 246);
+      doc.setFillColor(255, 200, 50);
       const durationText = `${section.duration} min`;
-      doc.text(durationText, pageWidth - margin - doc.getTextWidth(durationText), yPos);
-      yPos += 8;
+      const badgeWidth = doc.getTextWidth(durationText) + 10;
+      doc.rect(pageWidth - margin - badgeWidth - 5, yPos + 1, badgeWidth + 5, 8, 'F');
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(9);
+      doc.text(durationText, pageWidth - margin - badgeWidth, yPos + 6.5);
+      yPos += 18;
 
       // Section content
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
       doc.setTextColor(50, 50, 50);
-      const contentLines = doc.splitTextToSize(section.content, contentWidth);
-      doc.text(contentLines, margin, yPos);
-      yPos += contentLines.length * 5 + 4;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const contentLines = doc.splitTextToSize(section.content, contentWidth - 10);
+      doc.text(contentLines, margin + 5, yPos);
+      yPos += contentLines.length * 5 + 8;
 
       // Activities
       if (section.activities && section.activities.length > 0) {
-        doc.setFont("helvetica", "italic");
+        doc.setFillColor(230, 245, 230);
+        const activitiesHeight = section.activities.length * 6 + 12;
+        doc.rect(margin + 10, yPos - 3, contentWidth - 20, activitiesHeight, 'F');
+        
+        doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
-        doc.setTextColor(80, 80, 80);
-        doc.text("Atividades:", margin + 5, yPos);
-        yPos += 5;
+        doc.setTextColor(34, 139, 34);
+        doc.text("✅ Atividades Práticas:", margin + 15, yPos + 5);
+        yPos += 10;
+        
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(60, 60, 60);
         section.activities.forEach((activity) => {
-          const activityLines = doc.splitTextToSize(`• ${activity}`, contentWidth - 10);
-          doc.text(activityLines, margin + 10, yPos);
-          yPos += activityLines.length * 4 + 2;
+          const activityLines = doc.splitTextToSize(`• ${activity}`, contentWidth - 35);
+          doc.text(activityLines, margin + 20, yPos);
+          yPos += activityLines.length * 5 + 2;
         });
+        yPos += 5;
       }
-      yPos += 6;
+      yPos += 8;
     });
 
+    // Summary section
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 25;
+    }
+    
+    doc.setFillColor(52, 66, 102);
+    doc.rect(margin, yPos, contentWidth, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("📋 RESUMO DO PLANO", margin + 5, yPos + 7);
+    yPos += 18;
+
+    doc.setTextColor(50, 50, 50);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    
+    lessonPlan.sections.forEach((section, index) => {
+      doc.text(`${index + 1}. ${section.title} - ${section.duration} minutos`, margin + 5, yPos);
+      yPos += 6;
+    });
+    
+    yPos += 5;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: ${lessonPlan.totalDuration} minutos`, margin + 5, yPos);
+
     // Footer
-    doc.setFontSize(9);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
     doc.setTextColor(150, 150, 150);
-    doc.text(`Gerado por ClassBuddy em ${new Date().toLocaleDateString("pt-BR")}`, margin, 285);
+    doc.text(`Gerado por ClassBuddy em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`, margin, 290);
 
     // Save
     const fileName = `plano_${lessonPlan.subject?.replace(/\s+/g, "_") || "aula"}_${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -429,38 +489,38 @@ const LessonPlanner: React.FC = () => {
               </TotalTime>
 
               <ButtonGroup>
-                <Button
-                  $variant="secondary"
+                <ActionButton
+                  $variant="save"
                   onClick={handleSaveLesson}
                   disabled={isSaved}
                 >
-                  <Save size={20} />
+                  <Save size={18} />
                   {isSaved ? "Salvo!" : "Salvar"}
-                </Button>
-                <Button
-                  $variant="secondary"
+                </ActionButton>
+                <ActionButton
+                  $variant="pdf"
                   onClick={exportToPDF}
                 >
-                  <FileText size={20} />
+                  <FileText size={18} />
                   Exportar PDF
-                </Button>
-                <Button
-                  $variant="secondary"
+                </ActionButton>
+                <ActionButton
+                  $variant="slides"
                   onClick={handleGenerateSlides}
                   disabled={isGeneratingSlides}
                 >
                   {isGeneratingSlides ? (
                     <>
                       <LoadingSpinner />
-                      Gerando slides...
+                      Gerando...
                     </>
                   ) : (
                     <>
-                      <Presentation size={20} />
+                      <Presentation size={18} />
                       Gerar Slides
                     </>
                   )}
-                </Button>
+                </ActionButton>
               </ButtonGroup>
             </LessonPlanContainer>
           ) : (
