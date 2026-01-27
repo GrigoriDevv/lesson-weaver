@@ -159,18 +159,92 @@ const LessonPlanner: React.FC = () => {
   };
 
   const exportToPDF = () => {
+    if (!lessonPlan) return;
+    
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Lição: ${lessonPlan?.objective || ""}`, 10, 20);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let yPos = 20;
 
-    const contentLines = doc.splitTextToSize(lessonPlan?.objective || "", 170);
-    doc.text(contentLines, 10, 30);
-    doc.setTextColor(0, 0, 255);
-    doc.textWithLink("Ver apresentação completa...", 10, 50, {
-      url: gammaResult?.url || "",
+    // Title
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(59, 130, 246);
+    doc.text(lessonPlan.subject || "Plano de Aula", margin, yPos);
+    yPos += 12;
+
+    // Objective
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 0, 0);
+    doc.text("🎯 Objetivo:", margin, yPos);
+    yPos += 7;
+    doc.setFont("helvetica", "normal");
+    const objectiveLines = doc.splitTextToSize(lessonPlan.objective, contentWidth);
+    doc.text(objectiveLines, margin, yPos);
+    yPos += objectiveLines.length * 6 + 8;
+
+    // Duration info
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Duração Total: ${lessonPlan.totalDuration} minutos`, margin, yPos);
+    yPos += 12;
+
+    // Sections
+    doc.setTextColor(0, 0, 0);
+    lessonPlan.sections.forEach((section, index) => {
+      // Check if we need a new page
+      if (yPos > 260) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Section header
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(139, 92, 246);
+      doc.text(`${index + 1}. ${section.title}`, margin, yPos);
+      
+      // Duration badge
+      doc.setFontSize(10);
+      doc.setTextColor(59, 130, 246);
+      const durationText = `${section.duration} min`;
+      doc.text(durationText, pageWidth - margin - doc.getTextWidth(durationText), yPos);
+      yPos += 8;
+
+      // Section content
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(50, 50, 50);
+      const contentLines = doc.splitTextToSize(section.content, contentWidth);
+      doc.text(contentLines, margin, yPos);
+      yPos += contentLines.length * 5 + 4;
+
+      // Activities
+      if (section.activities && section.activities.length > 0) {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        doc.text("Atividades:", margin + 5, yPos);
+        yPos += 5;
+        section.activities.forEach((activity) => {
+          const activityLines = doc.splitTextToSize(`• ${activity}`, contentWidth - 10);
+          doc.text(activityLines, margin + 10, yPos);
+          yPos += activityLines.length * 4 + 2;
+        });
+      }
+      yPos += 6;
     });
-    doc.save(`${lessonPlan?.objective.replace(/\s+/g, "_")}.pdf`);
+
+    // Footer
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Gerado por ClassBuddy em ${new Date().toLocaleDateString("pt-BR")}`, margin, 285);
+
+    // Save
+    const fileName = `plano_${lessonPlan.subject?.replace(/\s+/g, "_") || "aula"}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(fileName);
   };
 
   return (
@@ -362,6 +436,13 @@ const LessonPlanner: React.FC = () => {
                 >
                   <Save size={20} />
                   {isSaved ? "Salvo!" : "Salvar"}
+                </Button>
+                <Button
+                  $variant="secondary"
+                  onClick={exportToPDF}
+                >
+                  <FileText size={20} />
+                  Exportar PDF
                 </Button>
                 <Button
                   $variant="secondary"
