@@ -1,7 +1,7 @@
-import React from 'react';
-import styled from 'styled-components';
-import { LessonPlan } from './types';
-import { ExternalLink, Copy, X } from 'lucide-react';
+import React from "react";
+import styled from "styled-components";
+import { LessonPlan } from "./types";
+import { ExternalLink, Copy, X } from "lucide-react";
 
 const Overlay = styled.div`
   position: fixed;
@@ -50,7 +50,7 @@ const CloseButton = styled.button`
   padding: 0.5rem;
   border-radius: 0.5rem;
   transition: all 0.2s;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
@@ -70,29 +70,33 @@ const SlideContainer = styled.div`
 `;
 
 const Slide = styled.div`
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.1),
+    rgba(59, 130, 246, 0.1)
+  );
   border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  
+
   h3 {
     color: #a78bfa;
     font-size: 1.125rem;
     margin: 0 0 0.75rem 0;
   }
-  
+
   p {
     color: #cbd5e1;
     font-size: 0.9rem;
     line-height: 1.6;
     margin: 0;
   }
-  
+
   ul {
     margin: 0.75rem 0 0 0;
     padding-left: 1.25rem;
     color: #94a3b8;
-    
+
     li {
       margin-bottom: 0.25rem;
     }
@@ -135,9 +139,11 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  
-  ${({ $primary }) => $primary ? `
-    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+
+  ${({ $primary }) =>
+    $primary
+      ? `
+    background: linear-gradient(135deg, #8b5cf6, #193869);
     border: none;
     color: white;
     
@@ -145,7 +151,8 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
     }
-  ` : `
+  `
+      : `
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(139, 92, 246, 0.3);
     color: #e2e8f0;
@@ -158,11 +165,11 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
 
 const Message = styled.div`
   background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 1rem;
-  color: #60a5fa;
+  color: #ffffff;
   font-size: 0.9rem;
 `;
 
@@ -178,11 +185,15 @@ interface SlidePreviewProps {
   onClose: () => void;
 }
 
-const SlidePreview: React.FC<SlidePreviewProps> = ({ lessonPlan, gammaResult, onClose }) => {
+const SlidePreview: React.FC<SlidePreviewProps> = ({
+  lessonPlan,
+  gammaResult,
+  onClose,
+}) => {
   const handleCopyContent = async () => {
     let content = `# ${lessonPlan.subject}\n\n`;
     content += `## Objetivo\n${lessonPlan.objective}\n\n`;
-    
+
     lessonPlan.sections.forEach((section, index) => {
       content += `## ${index + 1}. ${section.title} (${section.duration} min)\n`;
       content += `${section.content}\n\n`;
@@ -191,19 +202,19 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({ lessonPlan, gammaResult, on
         section.activities.forEach((activity) => {
           content += `- ${activity}\n`;
         });
-        content += '\n';
+        content += "\n";
       }
     });
 
     await navigator.clipboard.writeText(content);
-    alert('Conteúdo copiado para a área de transferência!');
+    alert("Conteúdo copiado para a área de transferência!");
   };
 
   const handleOpenGamma = () => {
     if (gammaResult?.url) {
-      window.open(gammaResult.url, '_blank');
+      window.open(gammaResult.url, "_blank");
     } else {
-      window.open('https://gamma.app/create', '_blank');
+      window.open("https://gamma.app/create", "_blank");
     }
   };
 
@@ -216,23 +227,24 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({ lessonPlan, gammaResult, on
             <X size={20} />
           </CloseButton>
         </ModalHeader>
-        
+
         <ModalContent>
-          {gammaResult?.message && (
-            <Message>{gammaResult.message}</Message>
-          )}
-          
+          {gammaResult?.message && <Message>{gammaResult.message}</Message>}
+
           <SlideContainer>
             {/* Title Slide */}
             <Slide>
               <SlideNumber>Slide 1 - Capa</SlideNumber>
               <h3>{lessonPlan.subject}</h3>
-              <p><strong>Objetivo:</strong> {lessonPlan.objective}</p>
-              <p style={{ marginTop: '0.5rem' }}>
-                <strong>Duração Total:</strong> {lessonPlan.totalDuration} minutos
+              <p>
+                <strong>Objetivo:</strong> {lessonPlan.objective}
+              </p>
+              <p style={{ marginTop: "0.5rem" }}>
+                <strong>Duração Total:</strong> {lessonPlan.totalDuration}{" "}
+                minutos
               </p>
             </Slide>
-            
+
             {/* Content Slides */}
             {lessonPlan.sections.map((section, index) => (
               <Slide key={index}>
@@ -251,7 +263,7 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({ lessonPlan, gammaResult, on
             ))}
           </SlideContainer>
         </ModalContent>
-        
+
         <ModalFooter>
           <ActionButton onClick={handleCopyContent}>
             <Copy size={16} />
@@ -259,7 +271,7 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({ lessonPlan, gammaResult, on
           </ActionButton>
           <ActionButton $primary onClick={handleOpenGamma}>
             <ExternalLink size={16} />
-            {gammaResult?.success ? 'Ver no Gamma' : 'Abrir Gamma'}
+            {gammaResult?.success ? "Ver no Gamma" : "Abrir Gamma"}
           </ActionButton>
         </ModalFooter>
       </Modal>
