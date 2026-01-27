@@ -449,3 +449,90 @@ export const ActionButton = styled.button<{ $variant?: "save" | "pdf" | "slides"
     transform: translateY(0);
   }
 `;
+
+export const PDFUploadSection = styled.div`
+  margin-bottom: 1.5rem;
+`;
+
+export const PDFUploadLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+`;
+
+export const PDFUploadArea = styled.div<{ $hasFile?: boolean }>`
+  position: relative;
+  border: 2px dashed ${({ $hasFile }) => ($hasFile ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.15)')};
+  border-radius: 12px;
+  background: ${({ $hasFile }) => ($hasFile ? 'rgba(16, 185, 129, 0.1)' : 'rgba(0, 0, 0, 0.2)')};
+  transition: all 0.3s ease;
+  overflow: hidden;
+
+  &:hover {
+    border-color: ${({ $hasFile }) => ($hasFile ? 'rgba(16, 185, 129, 0.7)' : 'rgba(139, 92, 246, 0.5)')};
+    background: ${({ $hasFile }) => ($hasFile ? 'rgba(16, 185, 129, 0.15)' : 'rgba(139, 92, 246, 0.1)')};
+  }
+
+  input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: ${({ $hasFile }) => ($hasFile ? '#10b981' : '#94a3b8')};
+    text-align: center;
+    pointer-events: none;
+
+    span {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    small {
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    svg {
+      opacity: 0.8;
+    }
+  }
+`;
+
+export const PDFClearButton = styled.button`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.8);
+  border: none;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(239, 68, 68, 1);
+    transform: scale(1.1);
+  }
+`;
