@@ -88,7 +88,7 @@ const LessonPlanner: React.FC = () => {
   const handleGenerate = async () => {
     clearError();
     setIsSaved(false);
-    const plan = await generateLessonPlan(content, totalTime, subject);
+    const plan = await generateLessonPlan(content, totalTime, subject, pdfText);
     if (plan) {
       setLessonPlan(plan);
     }
@@ -427,7 +427,7 @@ const LessonPlanner: React.FC = () => {
 
           <Button
             onClick={handleGenerate}
-            disabled={isLoading || !content.trim()}
+            disabled={isLoading || (!content.trim() && !pdfText.trim())}
           >
             {isLoading ? (
               <>

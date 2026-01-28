@@ -12,18 +12,19 @@ export const useApi = () => {
   const generateLessonPlan = useCallback(async (
     content: string,
     totalTime: number,
-    subject: string
+    subject: string,
+    pdfContent?: string
   ): Promise<LessonPlan | null> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      if (!content.trim()) {
-        throw new Error('Por favor, insira o conteúdo para a aula.');
+      if (!content.trim() && !pdfContent?.trim()) {
+        throw new Error('Por favor, insira o conteúdo para a aula ou envie um PDF.');
       }
 
       const { data, error: fnError } = await supabase.functions.invoke('generate-lesson', {
-        body: { content, totalTime, subject },
+        body: { content, totalTime, subject, pdfContent },
       });
 
       if (fnError) {
