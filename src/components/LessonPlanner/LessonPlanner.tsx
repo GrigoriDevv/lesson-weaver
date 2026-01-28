@@ -195,9 +195,9 @@ const LessonPlanner: React.FC = () => {
     doc.rect(margin, yPos - 5, contentWidth, 25, 'F');
     doc.setTextColor(60, 60, 60);
     doc.setFontSize(11);
-    doc.text(`📅 Data: ${new Date().toLocaleDateString("pt-BR")}`, margin + 5, yPos + 5);
-    doc.text(`⏱️ Duração Total: ${lessonPlan.totalDuration} minutos`, margin + 80, yPos + 5);
-    doc.text(`📚 Seções: ${lessonPlan.sections.length}`, margin + 5, yPos + 15);
+    doc.text(`Data: ${new Date().toLocaleDateString("pt-BR")}`, margin + 5, yPos + 5);
+    doc.text(`Duracao Total: ${lessonPlan.totalDuration} minutos`, margin + 80, yPos + 5);
+    doc.text(`Secoes: ${lessonPlan.sections.length}`, margin + 5, yPos + 15);
     yPos += 30;
 
     // Objective Section
@@ -206,7 +206,7 @@ const LessonPlanner: React.FC = () => {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("🎯 OBJETIVO DA AULA", margin + 5, yPos + 6);
+    doc.text("OBJETIVO DA AULA", margin + 5, yPos + 6);
     yPos += 15;
 
     doc.setTextColor(40, 40, 40);
@@ -259,7 +259,7 @@ const LessonPlanner: React.FC = () => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(34, 139, 34);
-        doc.text("✅ Atividades Práticas:", margin + 15, yPos + 5);
+        doc.text("Atividades Praticas:", margin + 15, yPos + 5);
         yPos += 10;
         
         doc.setFont("helvetica", "normal");
@@ -285,7 +285,7 @@ const LessonPlanner: React.FC = () => {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text("📋 RESUMO DO PLANO", margin + 5, yPos + 7);
+    doc.text("RESUMO DO PLANO", margin + 5, yPos + 7);
     yPos += 18;
 
     doc.setTextColor(50, 50, 50);
