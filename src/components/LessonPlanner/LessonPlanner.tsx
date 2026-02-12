@@ -46,14 +46,8 @@ import {
   PDFClearButton,
 } from "./styles";
 import jsPDF from "jspdf";
-import { set } from "date-fns";
 import { extractTextFromPDF, truncatePDFText } from "@/lib/pdfService";
-import {
-  generateGammaPresentation,
-  generateLessonContent,
-  getSavedLessons,
-  saveLessonLocally,
-} from "@/lib/iaService";
+import { generatePptx } from "@/lib/pptxService";
 
 const LessonPlanner: React.FC = () => {
   const [content, setContent] = useState("");
@@ -65,20 +59,10 @@ const LessonPlanner: React.FC = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [savedLessons, setSavedLessons] = useState(getSavedLessons());
-  const [gammaResult, setGammaResult] = useState<{
-    success: boolean;
-    url?: string;
-    content?: string;
-    gammaUrl?: string;
-    message?: string;
-  } | null>(null);
 
   const {
     generateLessonPlan,
-    generateSlides,
     isLoading,
-    isGeneratingSlides,
     error,
     clearError,
   } = useApi();
@@ -107,13 +91,14 @@ const LessonPlanner: React.FC = () => {
     setIsSaved(true);
   };
 
-  const handleGenerateSlides = async () => {
+  const handleGenerateSlides = () => {
     if (!lessonPlan) return;
-    const result = await generateSlides(lessonPlan);
-    if (result) {
-      setGammaResult(result);
-      setShowSlidePreview(true);
-    }
+    setShowSlidePreview(true);
+  };
+
+  const handleDownloadPptx = () => {
+    if (!lessonPlan) return;
+    generatePptx(lessonPlan);
   };
 
   const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,33 +117,6 @@ const LessonPlanner: React.FC = () => {
     } catch (error) {
       alert("Erro ao processar o PDF. Tente novamente.");
       setPdfText("");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGeneratePdf = async () => {
-    setLoading(true);
-    try {
-      const sourceText = pdfText
-        ? `\n\nBaseie-se nesta fonte de pesquisa:\n${pdfText}`
-        : "";
-      const fullPrompt = `Gere uma lição educativa sobre: ${prompt}${sourceText}`;
-      const content = await generateLessonContent(fullPrompt);
-      const presentationUrl = await generateGammaPresentation(
-        content,
-        `Lição: ${prompt}`,
-      );
-      const lesson = {
-        title: `Lição: ${prompt}`,
-        content: content,
-        presentationUrl: presentationUrl,
-      };
-      saveLessonLocally(lesson);
-      setGammaResult({ success: true, url: presentationUrl });
-      setSavedLessons(getSavedLessons());
-    } catch (error) {
-      alert("Erro ao gerar a lição. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -515,19 +473,9 @@ const LessonPlanner: React.FC = () => {
                 <ActionButton
                   $variant="slides"
                   onClick={handleGenerateSlides}
-                  disabled={isGeneratingSlides}
                 >
-                  {isGeneratingSlides ? (
-                    <>
-                      <LoadingSpinner />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Presentation size={18} />
-                      Gerar Slides
-                    </>
-                  )}
+                  <Presentation size={18} />
+                  Visualizar Slides
                 </ActionButton>
               </ButtonGroup>
             </LessonPlanContainer>
@@ -546,8 +494,8 @@ const LessonPlanner: React.FC = () => {
       {showSlidePreview && lessonPlan && (
         <SlidePreview
           lessonPlan={lessonPlan}
-          gammaResult={gammaResult}
           onClose={() => setShowSlidePreview(false)}
+          onDownloadPptx={handleDownloadPptx}
         />
       )}
     </Container>
