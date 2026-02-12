@@ -300,23 +300,44 @@ const LessonPlanner: React.FC = () => {
               onChange={(e) => setSubject(e.target.value)}
             >
               <option value="">Selecione a disciplina</option>
-              <option value="programacao">Programação</option>
-              <option value="desenvolvimento-web">Desenvolvimento Web</option>
-              <option value="banco-de-dados">Banco de Dados</option>
-              <option value="redes">Redes de Computadores</option>
-              <option value="seguranca">Segurança da Informação</option>
-              <option value="inteligencia-artificial">
-                Inteligência Artificial
-              </option>
-              <option value="cloud-computing">Cloud Computing</option>
-              <option value="devops">DevOps</option>
-              <option value="mobile">Desenvolvimento Mobile</option>
-              <option value="ux-ui">UX/UI Design</option>
-              <option value="edicao-video">Edição de Vídeo</option>
-              <option value="motion-graphics">Motion Graphics</option>
-              <option value="producao-audiovisual">Produção Audiovisual</option>
-              <option value="efeitos-visuais">Efeitos Visuais (VFX)</option>
-              <option value="animacao">Animação Digital</option>
+              <optgroup label="Ensino Fundamental e Médio">
+                <option value="matematica">Matemática</option>
+                <option value="portugues">Português</option>
+                <option value="historia">História</option>
+                <option value="geografia">Geografia</option>
+                <option value="ciencias">Ciências</option>
+                <option value="biologia">Biologia</option>
+                <option value="fisica">Física</option>
+                <option value="quimica">Química</option>
+                <option value="ingles">Inglês</option>
+                <option value="espanhol">Espanhol</option>
+                <option value="educacao-fisica">Educação Física</option>
+                <option value="artes">Artes</option>
+                <option value="filosofia">Filosofia</option>
+                <option value="sociologia">Sociologia</option>
+                <option value="literatura">Literatura</option>
+                <option value="redacao">Redação</option>
+              </optgroup>
+              <optgroup label="Ensino Superior">
+                <option value="direito">Direito</option>
+                <option value="administracao">Administração</option>
+                <option value="contabilidade">Contabilidade</option>
+                <option value="economia">Economia</option>
+                <option value="engenharia">Engenharia</option>
+                <option value="medicina">Medicina</option>
+                <option value="enfermagem">Enfermagem</option>
+                <option value="psicologia">Psicologia</option>
+                <option value="pedagogia">Pedagogia</option>
+                <option value="arquitetura">Arquitetura</option>
+                <option value="ciencia-da-computacao">Ciência da Computação</option>
+                <option value="sistemas-de-informacao">Sistemas de Informação</option>
+                <option value="marketing">Marketing</option>
+                <option value="comunicacao">Comunicação Social</option>
+                <option value="farmacia">Farmácia</option>
+                <option value="nutricao">Nutrição</option>
+                <option value="fisioterapia">Fisioterapia</option>
+                <option value="educacao-fisica-bacharelado">Educação Física (Bacharelado)</option>
+              </optgroup>
             </Select>
           </InputGroup>
 
