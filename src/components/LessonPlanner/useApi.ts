@@ -30,7 +30,7 @@ export const useApi = () => {
       }
 
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
       let researchContext = "";
       if (pdfContent && pdfContent.trim()) {
