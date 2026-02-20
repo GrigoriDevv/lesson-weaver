@@ -28,10 +28,24 @@ export const useApi = () => {
       });
 
       if (fnError) {
+        // Check status from the error context
+        const status = (fnError as any)?.status;
+        if (status === 429) {
+          throw new Error('⏳ Limite de requisições atingido. Aguarde alguns segundos e tente novamente.');
+        }
+        if (status === 402) {
+          throw new Error('💳 Créditos insuficientes. Adicione créditos ao seu workspace para continuar gerando planos.');
+        }
         throw new Error(fnError.message || 'Erro ao chamar a função de geração');
       }
 
       if (data?.error) {
+        if (data.error.includes('Limite de requisicoes') || data.error.includes('rate')) {
+          throw new Error('⏳ Limite de requisições atingido. Aguarde alguns segundos e tente novamente.');
+        }
+        if (data.error.includes('Creditos insuficientes') || data.error.includes('credits') || data.error.includes('Payment')) {
+          throw new Error('💳 Créditos insuficientes. Adicione créditos ao seu workspace para continuar gerando planos.');
+        }
         throw new Error(data.error);
       }
 
