@@ -7,6 +7,7 @@ import {
   Presentation,
   Save,
   Upload,
+  ExternalLink,
 } from "lucide-react";
 import { useApi } from "./useApi";
 import { useLessonHistory } from "./useLessonHistory";
@@ -62,7 +63,9 @@ const LessonPlanner: React.FC = () => {
 
   const {
     generateLessonPlan,
+    generateGammaSlides,
     isLoading,
+    isGeneratingSlides,
     error,
     clearError,
   } = useApi();
@@ -94,6 +97,14 @@ const LessonPlanner: React.FC = () => {
   const handleGenerateSlides = () => {
     if (!lessonPlan) return;
     setShowSlidePreview(true);
+  };
+
+  const handleGenerateGammaSlides = async () => {
+    if (!lessonPlan) return;
+    const result = await generateGammaSlides(lessonPlan);
+    if (result?.gammaUrl) {
+      window.open(result.gammaUrl, "_blank");
+    }
   };
 
   const handleDownloadPptx = () => {
@@ -497,6 +508,23 @@ const LessonPlanner: React.FC = () => {
                 >
                   <Presentation size={18} />
                   Visualizar Slides
+                </ActionButton>
+                <ActionButton
+                  $variant="save"
+                  onClick={handleGenerateGammaSlides}
+                  disabled={isGeneratingSlides}
+                >
+                  {isGeneratingSlides ? (
+                    <>
+                      <LoadingSpinner />
+                      Gerando no Gamma...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink size={18} />
+                      Gerar com Gamma
+                    </>
+                  )}
                 </ActionButton>
               </ButtonGroup>
             </LessonPlanContainer>

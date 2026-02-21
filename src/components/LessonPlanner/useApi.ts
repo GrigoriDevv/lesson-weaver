@@ -59,8 +59,42 @@ export const useApi = () => {
     }
   }, []);
 
+  const generateGammaSlides = useCallback(async (
+    lessonPlan: LessonPlan
+  ): Promise<{ gammaUrl: string; pptxUrl?: string; pdfUrl?: string } | null> => {
+    setIsGeneratingSlides(true);
+    setError(null);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('generate-gamma-slides', {
+        body: {
+          subject: lessonPlan.subject,
+          objective: lessonPlan.objective,
+          sections: lessonPlan.sections,
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message || 'Erro ao gerar slides no Gamma');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
+      return null;
+    } finally {
+      setIsGeneratingSlides(false);
+    }
+  }, []);
+
   return {
     generateLessonPlan,
+    generateGammaSlides,
     isLoading,
     isGeneratingSlides,
     error,

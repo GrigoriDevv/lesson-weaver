@@ -2,3 +2,6 @@ project_id = "ymgyynozipevrbkaywnh"
 
 [functions.generate-lesson]
 verify_jwt = false
+
+[functions.generate-gamma-slides]
+verify_jwt = false
