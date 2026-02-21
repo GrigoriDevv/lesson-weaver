@@ -12,11 +12,11 @@ serve(async (req) => {
   }
 
   try {
-    const { subject, objective, sections } = await req.json();
+    const { subject, objective, sections, gammaApiKey } = await req.json();
 
-    const GAMMA_API_KEY = Deno.env.get("GAMMA_API_KEY");
+    const GAMMA_API_KEY = Deno.env.get("GAMMA_API_KEY") || gammaApiKey;
     if (!GAMMA_API_KEY) {
-      throw new Error("GAMMA_API_KEY is not configured");
+      throw new Error("GAMMA_API_KEY is not configured. Set it as a Supabase secret or pass via VITE_GAMMA_API_KEY.");
     }
 
     // Build input text from lesson plan
@@ -43,10 +43,27 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         inputText,
-        textMode: "generate",
+        textMode: "preserve",
         format: "presentation",
         numCards: Math.min(sections?.length + 2 || 8, 15),
         exportAs: "pptx",
+        sharingOptions: {
+          externalAccess: "edit",
+        },
+        additionalInstructions: "Mantenha todo o conteúdo em português do Brasil. Não traduza nada para inglês.",
+        textOptions: {
+          language: "pt",
+          amount: "detailed",
+          tone: "didático, profissional",
+          audience: "professores e alunos brasileiros",
+        },
+          cardOptions: {
+          dimensions: "16x9",
+        },
+        imageOptions: {
+          source: "aiGenerated",
+          style: "educacional, moderno, limpo",
+        },
       }),
     });
 
@@ -96,11 +113,68 @@ serve(async (req) => {
       throw new Error("Gamma generation timed out");
     }
 
+    console.log("Gamma completed result keys:", Object.keys(result));
+    console.log("Gamma completed result:", JSON.stringify(result));
+
+    let pptxUrl = result.pptxUrl || result.exportUrl || result.downloadUrl
+      || result.fileUrl || result.exports?.pptx || null;
+    let pdfUrl = result.pdfUrl || result.exports?.pdf || null;
+    const gammaUrl = result.gammaUrl || result.url || null;
+
+    // Step 3: If no download URLs, explicitly request export
+    if (!pptxUrl && generationId) {
+      try {
+        const exportResponse = await fetch(
+          `https://public-api.gamma.app/v1.0/generations/${generationId}/export`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-API-KEY": GAMMA_API_KEY,
+            },
+            body: JSON.stringify({ format: "pptx" }),
+          }
+        );
+
+        if (exportResponse.ok) {
+          const exportData = await exportResponse.json();
+          console.log("Gamma export response:", JSON.stringify(exportData));
+
+          const exportId = exportData.exportId || exportData.id;
+
+          if (exportId) {
+            for (let j = 0; j < 15; j++) {
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+
+              const exportStatusResponse = await fetch(
+                `https://public-api.gamma.app/v1.0/generations/${generationId}/export/${exportId}`,
+                { headers: { "X-API-KEY": GAMMA_API_KEY } }
+              );
+
+              if (exportStatusResponse.ok) {
+                const exportStatus = await exportStatusResponse.json();
+                console.log("Gamma export status:", JSON.stringify(exportStatus));
+
+                if (exportStatus.status === "completed" || exportStatus.url || exportStatus.downloadUrl) {
+                  pptxUrl = exportStatus.url || exportStatus.downloadUrl || exportStatus.pptxUrl || null;
+                  break;
+                }
+              }
+            }
+          } else if (exportData.url || exportData.downloadUrl) {
+            pptxUrl = exportData.url || exportData.downloadUrl;
+          }
+        }
+      } catch (exportErr) {
+        console.error("Gamma export request failed:", exportErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({
-        gammaUrl: result.gammaUrl,
-        pptxUrl: result.pptxUrl || null,
-        pdfUrl: result.pdfUrl || null,
+        gammaUrl,
+        pptxUrl,
+        pdfUrl,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

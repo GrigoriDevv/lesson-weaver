@@ -513,6 +513,59 @@ export const PDFUploadArea = styled.div<{ $hasFile?: boolean }>`
   }
 `;
 
+export const GammaDownloadSection = styled.div`
+  margin-top: 1.5rem;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 12px;
+  padding: 1.25rem;
+  animation: ${fadeIn} 0.4s ease-out;
+`;
+
+export const GammaDownloadTitle = styled.h4`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #c4b5fd;
+  margin-bottom: 0.75rem;
+`;
+
+export const GammaDownloadLink = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #e8e8e8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateX(4px);
+  }
+
+  svg:last-child {
+    margin-left: auto;
+    opacity: 0.5;
+  }
+`;
+
 export const PDFClearButton = styled.button`
   position: absolute;
   top: 0.5rem;

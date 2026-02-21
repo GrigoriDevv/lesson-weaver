@@ -30,32 +30,52 @@ ${pdfContent}
 `;
     }
 
-    const systemPrompt = `Voce e um assistente especializado em criar planos de aula detalhados e estruturados para professores.
-Voce deve criar planos praticos, engajadores e pedagogicamente eficazes.
-IMPORTANTE: Retorne APENAS o JSON valido, sem markdown, sem blocos de codigo, sem explicacoes.`;
+    const systemPrompt = `Voce e um professor universitario com doutorado e vasta experiencia em sala de aula. Sua funcao e criar AULAS COMPLETAS, EXTENSAS e PROFUNDAS.
+Voce NAO gera resumos, esquemas ou topicos — voce escreve o CONTEUDO INTEGRAL que sera apresentado em sala de aula.
+Cada secao deve parecer um capitulo de livro didatico: com introducao ao tema, desenvolvimento completo dos conceitos, exemplos resolvidos passo a passo, estudos de caso, analogias, contexto historico quando relevante, e fechamento com reflexao.
+O conteudo deve ser EXTENSO — quanto maior a duracao da aula, mais denso e aprofundado deve ser o material.
+IMPORTANTE: Retorne APENAS o JSON valido, sem markdown, sem blocos de codigo, sem explicacoes fora do JSON.`;
 
-    const userPrompt = `Crie um plano de aula completo com as seguintes especificacoes:
+    const numSections = totalTime <= 60 ? 5 : totalTime <= 120 ? 7 : totalTime <= 180 ? 9 : 12;
+    const minWordsPerSection = totalTime <= 60 ? 200 : totalTime <= 120 ? 350 : 500;
+
+    const userPrompt = `Crie uma AULA COMPLETA, EXTENSA e APROFUNDADA com as seguintes especificacoes:
 
 Disciplina: ${subject || "Geral"}
-Duracao total: ${totalTime} minutos
-Conteudo principal: ${content}
+Duracao total: ${totalTime} minutos (${(totalTime / 60).toFixed(1)} horas)
+Tema/Conteudo: ${content}
 ${researchContext}
 
-Estruture o plano em secoes logicas, distribuindo o tempo de forma equilibrada.
-Inclua atividades praticas e momentos de interacao.
-${pdfContent ? "IMPORTANTE: Baseie o conteudo da aula no material de pesquisa fornecido acima." : ""}
+REGRAS OBRIGATORIAS:
+
+1. QUANTIDADE DE SECOES: Gere pelo menos ${numSections} secoes para cobrir adequadamente ${totalTime} minutos de aula.
+2. PROFUNDIDADE DO CONTEUDO: Cada campo "content" DEVE ter no minimo ${minWordsPerSection} palavras. Isso e OBRIGATORIO.
+3. CADA SECAO deve conter:
+   - Introducao contextualizando o subtema dentro do tema geral
+   - Explicacao teorica completa com definicoes formais e informais
+   - Pelo menos 2 exemplos praticos detalhados e resolvidos passo a passo
+   - Analogias e metaforas do cotidiano para facilitar a compreensao
+   - Contexto historico ou curiosidades relevantes sobre o tema
+   - Conexoes com outras areas do conhecimento (interdisciplinaridade)
+   - Perguntas provocativas para debate e reflexao em sala
+   - Transicao natural para a proxima secao
+4. O texto deve ser escrito como a FALA COMPLETA do professor — nao como anotacoes ou slides. Deve ser fluido, didatico e pronto para ser lido em voz alta.
+5. ATIVIDADES: Cada secao deve ter pelo menos 1 atividade pratica com instrucoes detalhadas passo a passo, materiais necessarios e resultado esperado.
+6. DISTRIBUICAO DE TEMPO: Secoes mais complexas devem ter mais tempo. Inclua secoes de abertura, desenvolvimento e fechamento.
+7. Para aulas longas (acima de 60 min), inclua secoes de intervalo/pausa e recapitulacao.
+${pdfContent ? "8. OBRIGATORIO: Baseie TODO o conteudo no material de pesquisa fornecido. Extraia, desenvolva e aprofunde cada conceito do PDF com explicacoes proprias." : ""}
 
 Retorne APENAS um objeto JSON valido (sem markdown) com esta estrutura exata:
 {
   "subject": "nome da disciplina",
-  "objective": "objetivo geral da aula em uma frase clara",
+  "objective": "objetivo geral da aula em uma frase clara, especifica e abrangente",
   "totalDuration": ${totalTime},
   "sections": [
     {
-      "title": "Titulo da secao",
+      "title": "Titulo descritivo da secao",
       "duration": numero_em_minutos,
-      "content": "Descricao detalhada do que sera abordado nesta secao, incluindo conceitos e explicacoes",
-      "activities": ["atividade pratica 1", "atividade pratica 2"]
+      "content": "CONTEUDO COMPLETO E EXTENSO. Minimo ${minWordsPerSection} palavras. Deve conter paragrafos completos com teoria, exemplos resolvidos, analogias, contexto e reflexoes. Escreva como um capitulo de livro didatico.",
+      "activities": ["Atividade detalhada com passo-a-passo completo, materiais e resultado esperado"]
     }
   ]
 }`;
@@ -70,6 +90,7 @@ Retorne APENAS um objeto JSON valido (sem markdown) com esta estrutura exata:
         },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
+          max_tokens: 32000,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },

@@ -71,6 +71,7 @@ export const useApi = () => {
           subject: lessonPlan.subject,
           objective: lessonPlan.objective,
           sections: lessonPlan.sections,
+          gammaApiKey: import.meta.env.VITE_GAMMA_API_KEY,
         },
       });
 

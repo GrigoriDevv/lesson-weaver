@@ -8,6 +8,7 @@ import {
   Save,
   Upload,
   ExternalLink,
+  Download,
 } from "lucide-react";
 import { useApi } from "./useApi";
 import { useLessonHistory } from "./useLessonHistory";
@@ -45,6 +46,9 @@ import {
   PDFUploadLabel,
   PDFUploadArea,
   PDFClearButton,
+  GammaDownloadSection,
+  GammaDownloadTitle,
+  GammaDownloadLink,
 } from "./styles";
 import jsPDF from "jspdf";
 import { extractTextFromPDF, truncatePDFText } from "@/lib/pdfService";
@@ -60,6 +64,11 @@ const LessonPlanner: React.FC = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [gammaResult, setGammaResult] = useState<{
+    gammaUrl?: string;
+    pptxUrl?: string;
+    pdfUrl?: string;
+  } | null>(null);
 
   const {
     generateLessonPlan,
@@ -101,15 +110,24 @@ const LessonPlanner: React.FC = () => {
 
   const handleGenerateGammaSlides = async () => {
     if (!lessonPlan) return;
+    setGammaResult(null);
     const result = await generateGammaSlides(lessonPlan);
-    if (result?.gammaUrl) {
-      window.open(result.gammaUrl, "_blank");
+    if (result) {
+      setGammaResult(result);
+      if (result.gammaUrl) {
+        window.open(result.gammaUrl, "_blank");
+      }
     }
   };
 
   const handleDownloadPptx = () => {
     if (!lessonPlan) return;
     generatePptx(lessonPlan);
+  };
+
+  const handleDownloadLocalPDF = () => {
+    if (!lessonPlan) return;
+    exportToPDF();
   };
 
   const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -359,7 +377,7 @@ const LessonPlanner: React.FC = () => {
               value={totalTime}
               onChange={(e) => setTotalTime(Number(e.target.value))}
               min={15}
-              max={180}
+              max={480}
               placeholder="Ex: 50"
             />
           </InputGroup>
@@ -527,6 +545,51 @@ const LessonPlanner: React.FC = () => {
                   )}
                 </ActionButton>
               </ButtonGroup>
+
+              {gammaResult && (
+                <GammaDownloadSection>
+                  <GammaDownloadTitle>
+                    <Download size={18} />
+                    Downloads do Conteúdo
+                  </GammaDownloadTitle>
+
+                  <GammaDownloadLink as="button" onClick={handleDownloadPptx}>
+                    <Presentation size={16} />
+                    Baixar Slides (.pptx)
+                    <Download size={14} />
+                  </GammaDownloadLink>
+
+                  <GammaDownloadLink as="button" onClick={handleDownloadLocalPDF}>
+                    <FileText size={16} />
+                    Baixar Plano de Aula (.pdf)
+                    <Download size={14} />
+                  </GammaDownloadLink>
+
+                  {gammaResult.pptxUrl && (
+                    <GammaDownloadLink href={gammaResult.pptxUrl} target="_blank" rel="noopener noreferrer">
+                      <Presentation size={16} />
+                      Baixar do Gamma (.pptx)
+                      <ExternalLink size={14} />
+                    </GammaDownloadLink>
+                  )}
+
+                  {gammaResult.pdfUrl && (
+                    <GammaDownloadLink href={gammaResult.pdfUrl} target="_blank" rel="noopener noreferrer">
+                      <FileText size={16} />
+                      Baixar do Gamma (.pdf)
+                      <ExternalLink size={14} />
+                    </GammaDownloadLink>
+                  )}
+
+                  {gammaResult.gammaUrl && (
+                    <GammaDownloadLink href={gammaResult.gammaUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink size={16} />
+                      Abrir e Editar no Gamma
+                      <ExternalLink size={14} />
+                    </GammaDownloadLink>
+                  )}
+                </GammaDownloadSection>
+              )}
             </LessonPlanContainer>
           ) : (
             <EmptyState>
