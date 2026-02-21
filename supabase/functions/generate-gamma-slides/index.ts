@@ -47,6 +47,7 @@ serve(async (req) => {
         format: "presentation",
         numCards: Math.min(sections?.length + 2 || 8, 15),
         exportAs: "pptx",
+        workspaceAccess: "edit",
         sharingOptions: {
           externalAccess: "edit",
         },
