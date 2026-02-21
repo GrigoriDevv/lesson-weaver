@@ -46,10 +46,10 @@ serve(async (req) => {
         textMode: "preserve",
         format: "presentation",
         numCards: Math.min(sections?.length + 2 || 8, 15),
-        exportAs: "pptx",
-        workspaceAccess: "edit",
+        exportAs: "pptx",  // Solicita exportação automática para PPTX
         sharingOptions: {
-          externalAccess: "edit",
+          externalAccess: "view",
+          workspaceAccess: "view",   // Público por padrão: Qualquer um com o link pode visualizar
         },
         additionalInstructions: "Mantenha todo o conteúdo em português do Brasil. Não traduza nada para inglês.",
         textOptions: {
@@ -58,7 +58,7 @@ serve(async (req) => {
           tone: "didático, profissional",
           audience: "professores e alunos brasileiros",
         },
-          cardOptions: {
+        cardOptions: {
           dimensions: "16x9",
         },
         imageOptions: {
@@ -71,7 +71,7 @@ serve(async (req) => {
     if (!createResponse.ok) {
       const errorText = await createResponse.text();
       console.error("Gamma API error:", createResponse.status, errorText);
-      throw new Error(`Gamma API error: ${createResponse.status}`);
+      throw new Error(`Gamma API error: ${createResponse.status} - ${errorText}`);
     }
 
     const createData = await createResponse.json();
@@ -81,10 +81,12 @@ serve(async (req) => {
       throw new Error("No generationId returned from Gamma");
     }
 
-    // Step 2: Poll for completion (max 60s)
+    console.log("Generation created with ID:", generationId);
+
+    // Step 2: Poll for completion (max 90s, com intervalos de 3s para evitar rate limits)
     let result = null;
-    for (let i = 0; i < 30; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    for (let i = 0; i < 30; i++) {  // 30 tentativas x 3s = 90s
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       const statusResponse = await fetch(
         `https://public-api.gamma.app/v1.0/generations/${generationId}`,
@@ -106,23 +108,23 @@ serve(async (req) => {
         result = statusData;
         break;
       } else if (statusData.status === "failed") {
-        throw new Error("Gamma generation failed");
+        throw new Error("Gamma generation failed: " + (statusData.error || "Unknown error"));
       }
     }
 
     if (!result) {
-      throw new Error("Gamma generation timed out");
+      throw new Error("Gamma generation timed out after 90 seconds");
     }
 
     console.log("Gamma completed result keys:", Object.keys(result));
-    console.log("Gamma completed result:", JSON.stringify(result));
+    console.log("Gamma completed result:", JSON.stringify(result, null, 2));
 
-    let pptxUrl = result.pptxUrl || result.exportUrl || result.downloadUrl
-      || result.fileUrl || result.exports?.pptx || null;
-    let pdfUrl = result.pdfUrl || result.exports?.pdf || null;
+    // Extrai URLs diretamente da resposta de status (se exportAs foi usado)
+    let pptxUrl = result.pptxUrl || result.exportUrl?.pptx || result.downloadUrl?.pptx || null;
+    let pdfUrl = result.pdfUrl || result.exportUrl?.pdf || null;
     const gammaUrl = result.gammaUrl || result.url || null;
 
-    // Step 3: If no download URLs, explicitly request export
+    // Step 3: Se não houver URL de PPTX, solicite export explicitamente
     if (!pptxUrl && generationId) {
       try {
         const exportResponse = await fetch(
@@ -137,43 +139,48 @@ serve(async (req) => {
           }
         );
 
-        if (exportResponse.ok) {
-          const exportData = await exportResponse.json();
-          console.log("Gamma export response:", JSON.stringify(exportData));
+        if (!exportResponse.ok) {
+          const exportErrText = await exportResponse.text();
+          console.error("Gamma export error:", exportResponse.status, exportErrText);
+          throw new Error(`Gamma export error: ${exportResponse.status}`);
+        }
 
-          const exportId = exportData.exportId || exportData.id;
+        const exportData = await exportResponse.json();
+        console.log("Gamma export response:", JSON.stringify(exportData, null, 2));
 
-          if (exportId) {
-            for (let j = 0; j < 15; j++) {
-              await new Promise((resolve) => setTimeout(resolve, 2000));
+        const exportId = exportData.exportId || exportData.id;
 
-              const exportStatusResponse = await fetch(
-                `https://public-api.gamma.app/v1.0/generations/${generationId}/export/${exportId}`,
-                { headers: { "X-API-KEY": GAMMA_API_KEY } }
-              );
+        if (exportId) {
+          for (let j = 0; j < 20; j++) {  // Max 60s para export
+            await new Promise((resolve) => setTimeout(resolve, 3000));
 
-              if (exportStatusResponse.ok) {
-                const exportStatus = await exportStatusResponse.json();
-                console.log("Gamma export status:", JSON.stringify(exportStatus));
+            const exportStatusResponse = await fetch(
+              `https://public-api.gamma.app/v1.0/generations/${generationId}/export/${exportId}`,
+              { headers: { "X-API-KEY": GAMMA_API_KEY } }
+            );
 
-                if (exportStatus.status === "completed" || exportStatus.url || exportStatus.downloadUrl) {
-                  pptxUrl = exportStatus.url || exportStatus.downloadUrl || exportStatus.pptxUrl || null;
-                  break;
-                }
+            if (exportStatusResponse.ok) {
+              const exportStatus = await exportStatusResponse.json();
+              console.log("Gamma export status:", JSON.stringify(exportStatus, null, 2));
+
+              if (exportStatus.status === "completed") {
+                pptxUrl = exportStatus.url || exportStatus.downloadUrl || exportStatus.pptxUrl || null;
+                break;
               }
             }
-          } else if (exportData.url || exportData.downloadUrl) {
-            pptxUrl = exportData.url || exportData.downloadUrl;
           }
+        } else if (exportData.url || exportData.downloadUrl) {
+          pptxUrl = exportData.url || exportData.downloadUrl;
         }
       } catch (exportErr) {
         console.error("Gamma export request failed:", exportErr);
+        // Continue sem PPTX, mas retorne o que tiver
       }
     }
 
     return new Response(
       JSON.stringify({
-        gammaUrl,
+        gammaUrl,  // Link público (se externalAccess: "view")
         pptxUrl,
         pdfUrl,
       }),
