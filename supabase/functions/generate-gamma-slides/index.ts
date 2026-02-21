@@ -43,7 +43,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         inputText,
-        textMode: "refine",
+        textMode: "generate",
         format: "presentation",
         numCards: Math.min(sections?.length + 2 || 8, 15),
         exportAs: "pptx",
