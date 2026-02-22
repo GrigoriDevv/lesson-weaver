@@ -46,14 +46,13 @@ serve(async (req) => {
         textMode: "preserve",
         format: "presentation",
         numCards: Math.min(sections?.length + 2 || 8, 15),
-        language: "pt-BR",
+        language: "pt-br",
         sharingOptions: {
           externalAccess: "view",
           workspaceAccess: "view",
         },
-        additionalInstructions: "IMPORTANTE: Todo o conteúdo DEVE estar em português do Brasil. Não traduza NADA para inglês. Títulos, textos, descrições e legendas devem ser escritos exclusivamente em português brasileiro.",
+        additionalInstructions: "IMPORTANTE: Todo o conteúdo DEVE estar em português do Brasil. Não traduza NADA para inglês.",
         textOptions: {
-          language: "pt-BR",
           amount: "detailed",
           tone: "didático, profissional",
           audience: "professores e alunos brasileiros",
