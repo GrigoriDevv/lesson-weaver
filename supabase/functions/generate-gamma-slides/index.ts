@@ -46,14 +46,14 @@ serve(async (req) => {
         textMode: "preserve",
         format: "presentation",
         numCards: Math.min(sections?.length + 2 || 8, 15),
-        exportAs: "pptx",  // Solicita exportação automática para PPTX
+        language: "pt-BR",
         sharingOptions: {
           externalAccess: "view",
-          workspaceAccess: "view",   // Público por padrão: Qualquer um com o link pode visualizar
+          workspaceAccess: "view",
         },
-        additionalInstructions: "Mantenha todo o conteúdo em português do Brasil. Não traduza nada para inglês.",
+        additionalInstructions: "IMPORTANTE: Todo o conteúdo DEVE estar em português do Brasil. Não traduza NADA para inglês. Títulos, textos, descrições e legendas devem ser escritos exclusivamente em português brasileiro.",
         textOptions: {
-          language: "pt",
+          language: "pt-BR",
           amount: "detailed",
           tone: "didático, profissional",
           audience: "professores e alunos brasileiros",
