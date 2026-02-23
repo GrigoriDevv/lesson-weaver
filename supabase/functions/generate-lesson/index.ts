@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,13 +8,59 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const LessonInputSchema = z.object({
+  content: z.string().min(1, "Content is required").max(50000, "Content too long"),
+  totalTime: z.number().int().min(10, "Minimum 10 minutes").max(480, "Maximum 8 hours"),
+  subject: z.string().min(1, "Subject is required").max(200, "Subject too long"),
+  pdfContent: z.string().max(100000, "PDF content too large").optional(),
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authentication check
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(
+      JSON.stringify({ error: "Missing authorization header" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
+  if (authError || !claimsData?.claims) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const { content, totalTime, subject, pdfContent } = await req.json();
+    // Input validation
+    const rawBody = await req.json();
+    let validatedInput;
+    try {
+      validatedInput = LessonInputSchema.parse(rawBody);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return new Response(
+          JSON.stringify({ error: "Invalid input", details: validationError.errors }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw validationError;
+    }
+
+    const { content, totalTime, subject, pdfContent } = validatedInput;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -129,7 +177,7 @@ Retorne APENAS um objeto JSON valido (sem markdown) com esta estrutura exata:
         );
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI gateway error:", response.status);
       return new Response(
         JSON.stringify({ error: "Erro ao gerar plano de aula" }),
         {
@@ -165,9 +213,7 @@ Retorne APENAS um objeto JSON valido (sem markdown) com esta estrutura exata:
     });
   } catch (error) {
     console.error("Error generating lesson plan:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Erro desconhecido";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: "Erro ao gerar plano de aula" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
