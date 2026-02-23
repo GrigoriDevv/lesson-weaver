@@ -64,12 +64,18 @@ REGRAS OBRIGATORIAS:
 6. DISTRIBUICAO DE TEMPO: Secoes mais complexas devem ter mais tempo. Inclua secoes de abertura, desenvolvimento e fechamento.
 7. Para aulas longas (acima de 60 min), inclua secoes de intervalo/pausa e recapitulacao.
 ${pdfContent ? "8. OBRIGATORIO: Baseie TODO o conteudo no material de pesquisa fornecido. Extraia, desenvolva e aprofunde cada conceito do PDF com explicacoes proprias." : ""}
+9. METODOLOGIA: Descreva a abordagem pedagogica utilizada (ex: aula expositiva dialogada, sala de aula invertida, aprendizagem baseada em problemas, etc.)
+10. AVALIACAO: Descreva como o aprendizado sera avaliado (criterios, instrumentos, formas de verificacao)
+11. RECURSOS: Liste todos os materiais e recursos necessarios (livros, slides, equipamentos, softwares, etc.)
 
 Retorne APENAS um objeto JSON valido (sem markdown) com esta estrutura exata:
 {
   "subject": "nome da disciplina",
   "objective": "objetivo geral da aula em uma frase clara, especifica e abrangente",
   "totalDuration": ${totalTime},
+  "methodology": "Descricao detalhada da metodologia pedagogica utilizada na aula, incluindo abordagens, estrategias e justificativas didaticas.",
+  "evaluation": "Descricao dos criterios e instrumentos de avaliacao, incluindo formas de verificacao da aprendizagem.",
+  "resources": ["Recurso 1", "Recurso 2", "Recurso 3"],
   "sections": [
     {
       "title": "Titulo descritivo da secao",

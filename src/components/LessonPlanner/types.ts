@@ -10,6 +10,9 @@ export interface LessonPlan {
   objective: string;
   sections: LessonSection[];
   totalDuration: number;
+  methodology?: string;
+  evaluation?: string;
+  resources?: string[];
 }
 
 export interface GeminiResponse {
