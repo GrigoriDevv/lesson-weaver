@@ -285,6 +285,145 @@ export function generatePptx(lessonPlan: LessonPlan): void {
   });
 
   // ═══════════════════════════════════════════
+  // METHODOLOGY SLIDE
+  // ═══════════════════════════════════════════
+  if (lessonPlan.methodology) {
+    const methSlide = pptx.addSlide();
+    methSlide.background = { color: OFF_WHITE };
+    addDecoCircles(methSlide, pptx);
+
+    methSlide.addShape("rect" as any, {
+      x: 0, y: 0, w: 0.12, h: "100%" as any,
+      fill: { type: "solid", color: TEAL },
+    });
+
+    methSlide.addText("METODOLOGIA", {
+      x: 0.8, y: 0.4, w: 6, h: 0.35,
+      fontSize: 11, bold: true, color: TEAL, fontFace: "Segoe UI",
+      charSpacing: 3,
+    });
+
+    methSlide.addText("🧭  Abordagem Pedagógica", {
+      x: 0.8, y: 0.85, w: 9, h: 0.6,
+      fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+    });
+
+    methSlide.addShape("rect" as any, {
+      x: 0.8, y: 1.6, w: 10.5, h: 0.02,
+      fill: { type: "solid", color: LIGHT_GRAY },
+    });
+
+    methSlide.addShape(pptx.ShapeType.roundRect, {
+      x: 0.8, y: 1.85, w: 10.5, h: 4.5,
+      fill: { type: "solid", color: WHITE },
+      shadow: { type: "outer", blur: 4, offset: 1, color: "000000", opacity: 0.06 } as any,
+      rectRadius: 0.1,
+    });
+    methSlide.addText(lessonPlan.methodology, {
+      x: 1.1, y: 2.0, w: 10, h: 4.2,
+      fontSize: 16, color: MEDIUM_TEXT, fontFace: "Segoe UI",
+      lineSpacingMultiple: 1.6, valign: "top",
+    });
+
+    addFooter(methSlide);
+  }
+
+  // ═══════════════════════════════════════════
+  // EVALUATION SLIDE
+  // ═══════════════════════════════════════════
+  if (lessonPlan.evaluation) {
+    const evalSlide = pptx.addSlide();
+    evalSlide.background = { color: OFF_WHITE };
+    addDecoCircles(evalSlide, pptx);
+
+    evalSlide.addShape("rect" as any, {
+      x: 0, y: 0, w: 0.12, h: "100%" as any,
+      fill: { type: "solid", color: CORAL },
+    });
+
+    evalSlide.addText("AVALIAÇÃO", {
+      x: 0.8, y: 0.4, w: 6, h: 0.35,
+      fontSize: 11, bold: true, color: CORAL, fontFace: "Segoe UI",
+      charSpacing: 3,
+    });
+
+    evalSlide.addText("📝  Critérios de Avaliação", {
+      x: 0.8, y: 0.85, w: 9, h: 0.6,
+      fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+    });
+
+    evalSlide.addShape("rect" as any, {
+      x: 0.8, y: 1.6, w: 10.5, h: 0.02,
+      fill: { type: "solid", color: LIGHT_GRAY },
+    });
+
+    evalSlide.addShape(pptx.ShapeType.roundRect, {
+      x: 0.8, y: 1.85, w: 10.5, h: 4.5,
+      fill: { type: "solid", color: WHITE },
+      shadow: { type: "outer", blur: 4, offset: 1, color: "000000", opacity: 0.06 } as any,
+      rectRadius: 0.1,
+    });
+    evalSlide.addText(lessonPlan.evaluation, {
+      x: 1.1, y: 2.0, w: 10, h: 4.2,
+      fontSize: 16, color: MEDIUM_TEXT, fontFace: "Segoe UI",
+      lineSpacingMultiple: 1.6, valign: "top",
+    });
+
+    addFooter(evalSlide);
+  }
+
+  // ═══════════════════════════════════════════
+  // RESOURCES SLIDE
+  // ═══════════════════════════════════════════
+  if (lessonPlan.resources && lessonPlan.resources.length > 0) {
+    const resSlide = pptx.addSlide();
+    resSlide.background = { color: OFF_WHITE };
+    addDecoCircles(resSlide, pptx);
+
+    resSlide.addShape("rect" as any, {
+      x: 0, y: 0, w: 0.12, h: "100%" as any,
+      fill: { type: "solid", color: AMBER },
+    });
+
+    resSlide.addText("RECURSOS E MATERIAIS", {
+      x: 0.8, y: 0.4, w: 6, h: 0.35,
+      fontSize: 11, bold: true, color: AMBER, fontFace: "Segoe UI",
+      charSpacing: 3,
+    });
+
+    resSlide.addText("📚  Materiais Necessários", {
+      x: 0.8, y: 0.85, w: 9, h: 0.6,
+      fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+    });
+
+    resSlide.addShape("rect" as any, {
+      x: 0.8, y: 1.6, w: 10.5, h: 0.02,
+      fill: { type: "solid", color: LIGHT_GRAY },
+    });
+
+    resSlide.addShape(pptx.ShapeType.roundRect, {
+      x: 0.8, y: 1.85, w: 10.5, h: 0.6 + lessonPlan.resources.length * 0.5,
+      fill: { type: "solid", color: WHITE },
+      shadow: { type: "outer", blur: 4, offset: 1, color: "000000", opacity: 0.06 } as any,
+      rectRadius: 0.1,
+    });
+
+    lessonPlan.resources.forEach((resource, idx) => {
+      const ry = 2.1 + idx * 0.5;
+      resSlide.addShape(pptx.ShapeType.ellipse, {
+        x: 1.2, y: ry + 0.08, w: 0.14, h: 0.14,
+        fill: { type: "solid", color: AMBER },
+      });
+      resSlide.addText(resource, {
+        x: 1.5, y: ry, w: 9.5, h: 0.45,
+        fontSize: 14, color: DARK_TEXT, fontFace: "Segoe UI", valign: "middle",
+      });
+    });
+
+    addFooter(resSlide);
+  }
+
+  // ═══════════════════════════════════════════
   // SUMMARY SLIDE
   // ═══════════════════════════════════════════
   const summary = pptx.addSlide();

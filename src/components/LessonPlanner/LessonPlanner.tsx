@@ -499,6 +499,39 @@ const LessonPlanner: React.FC = () => {
                 </LessonCard>
               ))}
 
+              {lessonPlan.methodology && (
+                <LessonCard>
+                  <LessonHeader>
+                    <LessonTitle>🧭 Metodologia</LessonTitle>
+                  </LessonHeader>
+                  <LessonContent>{lessonPlan.methodology}</LessonContent>
+                </LessonCard>
+              )}
+
+              {lessonPlan.evaluation && (
+                <LessonCard>
+                  <LessonHeader>
+                    <LessonTitle>📝 Avaliação</LessonTitle>
+                  </LessonHeader>
+                  <LessonContent>{lessonPlan.evaluation}</LessonContent>
+                </LessonCard>
+              )}
+
+              {lessonPlan.resources && lessonPlan.resources.length > 0 && (
+                <LessonCard>
+                  <LessonHeader>
+                    <LessonTitle>📚 Recursos e Materiais</LessonTitle>
+                  </LessonHeader>
+                  <LessonContent>
+                    <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+                      {lessonPlan.resources.map((resource, idx) => (
+                        <li key={idx} style={{ marginBottom: "0.3rem" }}>{resource}</li>
+                      ))}
+                    </ul>
+                  </LessonContent>
+                </LessonCard>
+              )}
+
               <TotalTime>
                 <span>{lessonPlan.totalDuration} minutos</span>
                 <p>Tempo total estimado</p>
