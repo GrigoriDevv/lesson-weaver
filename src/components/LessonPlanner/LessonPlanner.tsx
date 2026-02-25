@@ -387,7 +387,7 @@ const LessonPlanner: React.FC = () => {
             <TextArea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Descreva o conteúdo que será abordado na aula. Por exemplo: 'Introdução ao React - componentes, props e estado'"
+              placeholder="Descreva o conteúdo que será abordado na aula. Por exemplo: 'Brasil Colonial'"
             />
           </InputGroup>
 
