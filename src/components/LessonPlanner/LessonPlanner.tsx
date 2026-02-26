@@ -82,6 +82,7 @@ const LessonPlanner: React.FC = () => {
     useLessonHistory();
 
   const handleGenerate = async () => {
+    console.log("handleGenerate");
     clearError();
     setIsSaved(false);
     const plan = await generateLessonPlan(content, totalTime, subject, pdfText);

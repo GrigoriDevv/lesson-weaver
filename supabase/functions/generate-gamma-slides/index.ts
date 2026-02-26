@@ -21,6 +21,8 @@ const GammaInputSchema = z.object({
   sections: z.array(SectionSchema).min(1).max(20),
 });
 
+type Section = z.infer<typeof SectionSchema>;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -76,7 +78,7 @@ serve(async (req) => {
     // Build input text from lesson plan
     let inputText = `# ${subject || "Plano de Aula"}\n\n`;
     inputText += `## Objetivo\n${objective}\n\n`;
-    sections?.forEach((section: any, index: number) => {
+    sections?.forEach((section: Section, index: number) => {
       inputText += `## ${index + 1}. ${section.title} (${section.duration} min)\n`;
       inputText += `${section.content}\n\n`;
       if (section.activities?.length > 0) {
@@ -169,7 +171,7 @@ serve(async (req) => {
     }
 
     let pptxUrl = result.pptxUrl || result.exportUrl?.pptx || result.downloadUrl?.pptx || null;
-    let pdfUrl = result.pdfUrl || result.exportUrl?.pdf || null;
+    const pdfUrl = result.pdfUrl || result.exportUrl?.pdf || null;
     const gammaUrl = result.gammaUrl || result.url || null;
 
     // Step 3: Export PPTX if not available

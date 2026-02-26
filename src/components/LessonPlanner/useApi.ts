@@ -12,7 +12,7 @@ export const useApi = () => {
   const generateLessonPlan = useCallback(async (
     content: string,
     totalTime: number,
-    subject: string,
+    subject?: string,
     pdfContent?: string
   ): Promise<LessonPlan | null> => {
     setIsLoading(true);
@@ -29,7 +29,9 @@ export const useApi = () => {
 
       if (fnError) {
         // Check status from the error context
-        const status = (fnError as any)?.status;
+        const status = fnError && typeof fnError === 'object' && 'status' in fnError
+          ? (fnError as { status?: number }).status
+          : undefined;
         if (status === 429) {
           throw new Error('⏳ Limite de requisições atingido. Aguarde alguns segundos e tente novamente.');
         }
@@ -58,6 +60,7 @@ export const useApi = () => {
       setIsLoading(false);
     }
   }, []);
+  console.log(generateLessonPlan);
 
   const generateGammaSlides = useCallback(async (
     lessonPlan: LessonPlan

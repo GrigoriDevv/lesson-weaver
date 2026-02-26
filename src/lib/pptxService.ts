@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- pptxgenjs API uses loose types; consider narrowing when library types improve */
 import PptxGenJS from "pptxgenjs";
 import { LessonPlan } from "@/components/LessonPlanner/types";
 
