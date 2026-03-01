@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      lesson_generations: {
+        Row: {
+          created_at: string
+          gamma_url: string | null
+          id: string
+          lesson_plan: Json
+          pdf_url: string | null
+          pptx_url: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gamma_url?: string | null
+          id?: string
+          lesson_plan: Json
+          pdf_url?: string | null
+          pptx_url?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gamma_url?: string | null
+          id?: string
+          lesson_plan?: Json
+          pdf_url?: string | null
+          pptx_url?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

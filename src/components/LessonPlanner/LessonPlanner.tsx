@@ -11,6 +11,7 @@ import {
   Download,
 } from "lucide-react";
 import { useApi } from "./useApi";
+import { useAuth } from "@/hooks/useAuth";
 import { useLessonHistory } from "./useLessonHistory";
 import SlidePreview from "./SlidePreview";
 import LessonHistory from "./LessonHistory";
@@ -55,6 +56,7 @@ import { extractTextFromPDF, truncatePDFText } from "@/lib/pdfService";
 import { generatePptx } from "@/lib/pptxService";
 
 const LessonPlanner: React.FC = () => {
+  const { signOut } = useAuth();
   const [content, setContent] = useState("");
   const [totalTime, setTotalTime] = useState(50);
   const [subject, setSubject] = useState("");
@@ -91,9 +93,9 @@ const LessonPlanner: React.FC = () => {
     }
   };
 
-  const handleSaveLesson = () => {
+  const handleSaveLesson = async () => {
     if (lessonPlan) {
-      saveLesson(lessonPlan);
+      await saveLesson(lessonPlan, gammaResult || undefined);
       setIsSaved(true);
     }
   };
@@ -303,17 +305,33 @@ const LessonPlanner: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>
-          <BookOpen
-            size={32}
-            style={{ display: "inline", marginRight: "0.8rem" }}
-            color="black"
-          />
-          ClassBuddy
-        </Title>
-        <Subtitle>
-          Crie planos de aula estruturados e personalizados em segundos
-        </Subtitle>
+        <div>
+          <Title>
+            <BookOpen
+              size={32}
+              style={{ display: "inline", marginRight: "0.8rem" }}
+              color="black"
+            />
+            ClassBuddy
+          </Title>
+          <Subtitle>
+            Crie planos de aula estruturados e personalizados em segundos
+          </Subtitle>
+        </div>
+        <button
+          onClick={signOut}
+          style={{
+            background: 'hsla(230, 25%, 20%, 0.6)',
+            border: '1px solid hsla(230, 30%, 35%, 0.3)',
+            color: 'hsla(230, 20%, 65%, 0.8)',
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '0.8rem',
+          }}
+        >
+          Sair
+        </button>
       </Header>
 
       <MainContent>

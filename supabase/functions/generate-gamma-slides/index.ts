@@ -43,9 +43,8 @@ serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
-  if (authError || !claimsData?.claims) {
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError || !user) {
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -81,7 +80,7 @@ serve(async (req) => {
     sections?.forEach((section: Section, index: number) => {
       inputText += `## ${index + 1}. ${section.title} (${section.duration} min)\n`;
       inputText += `${section.content}\n\n`;
-      if (section.activities?.length > 0) {
+      if (section.activities && section.activities.length > 0) {
         inputText += `### Atividades Práticas\n`;
         section.activities.forEach((a: string) => {
           inputText += `- ${a}\n`;

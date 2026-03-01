@@ -60,7 +60,7 @@ export const useApi = () => {
       setIsLoading(false);
     }
   }, []);
-  console.log(generateLessonPlan);
+  
 
   const generateGammaSlides = useCallback(async (
     lessonPlan: LessonPlan
