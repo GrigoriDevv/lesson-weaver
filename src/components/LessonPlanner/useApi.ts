@@ -64,20 +64,32 @@ export const useApi = () => {
 
   const generateGammaSlides = useCallback(async (
     lessonPlan: LessonPlan
-  ): Promise<{ gammaUrl: string; pptxUrl?: string; pdfUrl?: string } | null> => {
+  ): Promise<{ gammaUrl?: string; pptxUrl?: string; pdfUrl?: string } | null> => {
     setIsGeneratingSlides(true);
     setError(null);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
       const { data, error: fnError } = await supabase.functions.invoke('generate-gamma-slides', {
         body: {
           subject: lessonPlan.subject,
           objective: lessonPlan.objective,
           sections: lessonPlan.sections,
         },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
       if (fnError) {
+        const status = fnError && typeof fnError === 'object' && 'status' in fnError
+          ? (fnError as { status?: number }).status
+          : undefined;
+
+        if (status === 401 || status === 403) {
+          throw new Error('Sua sessão expirou. Faça login novamente para gerar no Gamma.');
+        }
+
         throw new Error(fnError.message || 'Erro ao gerar slides no Gamma');
       }
 
