@@ -23,18 +23,73 @@ const GammaInputSchema = z.object({
 
 type Section = z.infer<typeof SectionSchema>;
 
+type GammaUrls = {
+  gammaUrl: string | null;
+  pptxUrl: string | null;
+  pdfUrl: string | null;
+};
+
+const buildGammaHeaders = (apiKey: string, includeJson = false) => ({
+  ...(includeJson ? { "Content-Type": "application/json" } : {}),
+  "X-API-KEY": apiKey,
+  Authorization: `Bearer ${apiKey}`,
+});
+
+const extractGenerationId = (payload: any): string | null => {
+  return (
+    payload?.generationId ??
+    payload?.id ??
+    payload?.generation?.id ??
+    payload?.data?.generationId ??
+    payload?.data?.id ??
+    null
+  );
+};
+
+const extractStatus = (payload: any): string => {
+  return String(payload?.status ?? payload?.state ?? payload?.phase ?? "").toLowerCase();
+};
+
+const extractUrls = (payload: any): GammaUrls => ({
+  gammaUrl: payload?.gammaUrl ?? payload?.url ?? payload?.generationUrl ?? null,
+  pptxUrl:
+    payload?.pptxUrl ??
+    payload?.exportUrl?.pptx ??
+    payload?.downloadUrl?.pptx ??
+    payload?.exports?.pptx?.url ??
+    payload?.downloads?.pptx ??
+    null,
+  pdfUrl:
+    payload?.pdfUrl ??
+    payload?.exportUrl?.pdf ??
+    payload?.downloadUrl?.pdf ??
+    payload?.exports?.pdf?.url ??
+    payload?.downloads?.pdf ??
+    null,
+});
+
+const getResponseBody = async (response: Response): Promise<any> => {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Authentication check
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(
-      JSON.stringify({ error: "Missing authorization header" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Missing authorization header" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const supabaseClient = createClient(
@@ -43,69 +98,58 @@ serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseClient.auth.getUser();
+
   if (authError || !user) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
-    // Input validation
     const rawBody = await req.json();
-    let validatedInput;
-    try {
-      validatedInput = GammaInputSchema.parse(rawBody);
-    } catch (validationError) {
-      if (validationError instanceof z.ZodError) {
-        return new Response(
-          JSON.stringify({ error: "Invalid input", details: validationError.errors }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw validationError;
-    }
-
+    const validatedInput = GammaInputSchema.parse(rawBody);
     const { subject, objective, sections } = validatedInput;
 
     const GAMMA_API_KEY = Deno.env.get("GAMMA_API_KEY");
     if (!GAMMA_API_KEY) {
-      throw new Error("GAMMA_API_KEY is not configured as a Supabase secret");
+      throw new Error("GAMMA_API_KEY não está configurada no backend");
     }
 
-    // Build input text from lesson plan
     let inputText = `# ${subject || "Plano de Aula"}\n\n`;
     inputText += `## Objetivo\n${objective}\n\n`;
-    sections?.forEach((section: Section, index: number) => {
+
+    sections.forEach((section: Section, index: number) => {
       inputText += `## ${index + 1}. ${section.title} (${section.duration} min)\n`;
       inputText += `${section.content}\n\n`;
+
       if (section.activities && section.activities.length > 0) {
         inputText += `### Atividades Práticas\n`;
-        section.activities.forEach((a: string) => {
-          inputText += `- ${a}\n`;
+        section.activities.forEach((activity: string) => {
+          inputText += `- ${activity}\n`;
         });
         inputText += "\n";
       }
     });
 
-    // Step 1: Create generation
     const createResponse = await fetch("https://public-api.gamma.app/v1.0/generations", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": GAMMA_API_KEY,
-      },
+      headers: buildGammaHeaders(GAMMA_API_KEY, true),
       body: JSON.stringify({
         inputText,
         textMode: "preserve",
         format: "presentation",
-        numCards: Math.min(sections?.length + 2 || 8, 15),
+        numCards: Math.min(sections.length + 2, 15),
         sharingOptions: {
           externalAccess: "view",
           workspaceAccess: "view",
         },
-        additionalInstructions: "IMPORTANTE: Todo o conteúdo DEVE estar em português do Brasil. Não traduza NADA para inglês.",
+        additionalInstructions:
+          "IMPORTANTE: Todo o conteúdo DEVE estar em português do Brasil. Não traduza NADA para inglês.",
         textOptions: {
           language: "pt-br",
           amount: "detailed",
@@ -122,116 +166,115 @@ serve(async (req) => {
       }),
     });
 
+    const createData = await getResponseBody(createResponse);
     if (!createResponse.ok) {
-      const errorText = await createResponse.text();
-      console.error("Gamma API error:", createResponse.status);
-      throw new Error(`Gamma API error: ${createResponse.status}`);
+      throw new Error(
+        `Falha ao criar apresentação no Gamma (${createResponse.status}): ${
+          createData?.message || createData?.error || createData?.raw || "erro desconhecido"
+        }`
+      );
     }
 
-    const createData = await createResponse.json();
-    const generationId = createData.generationId;
-
+    const generationId = extractGenerationId(createData);
     if (!generationId) {
-      throw new Error("No generationId returned from Gamma");
+      throw new Error("Gamma não retornou generationId na criação");
     }
 
-    console.log("Generation created with ID:", generationId);
+    let result: any = null;
 
-    // Step 2: Poll for completion (max 90s)
-    let result = null;
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
       const statusResponse = await fetch(
         `https://public-api.gamma.app/v1.0/generations/${generationId}`,
-        {
-          headers: { "X-API-KEY": GAMMA_API_KEY },
-        }
+        { headers: buildGammaHeaders(GAMMA_API_KEY) }
       );
 
+      const statusData = await getResponseBody(statusResponse);
       if (!statusResponse.ok) {
-        await statusResponse.text();
         continue;
       }
 
-      const statusData = await statusResponse.json();
-      console.log("Gamma status:", statusData.status);
+      const status = extractStatus(statusData);
 
-      if (statusData.status === "completed") {
+      if (["completed", "complete", "succeeded", "success", "ready"].includes(status)) {
         result = statusData;
         break;
-      } else if (statusData.status === "failed") {
-        throw new Error("Gamma generation failed");
+      }
+
+      if (["failed", "error", "cancelled", "canceled"].includes(status)) {
+        throw new Error(
+          `Gamma falhou ao gerar os slides: ${statusData?.message || statusData?.error || status}`
+        );
       }
     }
 
     if (!result) {
-      throw new Error("Gamma generation timed out after 90 seconds");
+      throw new Error("O Gamma demorou demais para finalizar a geração. Tente novamente.");
     }
 
-    let pptxUrl = result.pptxUrl || result.exportUrl?.pptx || result.downloadUrl?.pptx || null;
-    const pdfUrl = result.pdfUrl || result.exportUrl?.pdf || null;
-    const gammaUrl = result.gammaUrl || result.url || null;
+    let { gammaUrl, pptxUrl, pdfUrl } = extractUrls(result);
 
-    // Step 3: Export PPTX if not available
-    if (!pptxUrl && generationId) {
-      try {
-        const exportResponse = await fetch(
-          `https://public-api.gamma.app/v1.0/generations/${generationId}/export`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-API-KEY": GAMMA_API_KEY,
-            },
-            body: JSON.stringify({ format: "pptx" }),
-          }
+    if (!pptxUrl) {
+      const exportResponse = await fetch(
+        `https://public-api.gamma.app/v1.0/generations/${generationId}/export`,
+        {
+          method: "POST",
+          headers: buildGammaHeaders(GAMMA_API_KEY, true),
+          body: JSON.stringify({ format: "pptx" }),
+        }
+      );
+
+      const exportData = await getResponseBody(exportResponse);
+      if (!exportResponse.ok) {
+        throw new Error(
+          `Falha ao exportar PPTX no Gamma (${exportResponse.status}): ${
+            exportData?.message || exportData?.error || exportData?.raw || "erro desconhecido"
+          }`
         );
+      }
 
-        if (!exportResponse.ok) {
-          await exportResponse.text();
-          throw new Error(`Gamma export error: ${exportResponse.status}`);
-        }
+      const exportId = exportData?.exportId || exportData?.id;
 
-        const exportData = await exportResponse.json();
-        const exportId = exportData.exportId || exportData.id;
+      if (exportId) {
+        for (let j = 0; j < 30; j++) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
 
-        if (exportId) {
-          for (let j = 0; j < 20; j++) {
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+          const exportStatusResponse = await fetch(
+            `https://public-api.gamma.app/v1.0/generations/${generationId}/export/${exportId}`,
+            { headers: buildGammaHeaders(GAMMA_API_KEY) }
+          );
 
-            const exportStatusResponse = await fetch(
-              `https://public-api.gamma.app/v1.0/generations/${generationId}/export/${exportId}`,
-              { headers: { "X-API-KEY": GAMMA_API_KEY } }
-            );
+          const exportStatus = await getResponseBody(exportStatusResponse);
+          if (!exportStatusResponse.ok) continue;
 
-            if (exportStatusResponse.ok) {
-              const exportStatus = await exportStatusResponse.json();
-              if (exportStatus.status === "completed") {
-                pptxUrl = exportStatus.url || exportStatus.downloadUrl || exportStatus.pptxUrl || null;
-                break;
-              }
-            } else {
-              await exportStatusResponse.text();
-            }
+          const exportState = extractStatus(exportStatus);
+          if (["completed", "complete", "succeeded", "success", "ready"].includes(exportState)) {
+            pptxUrl =
+              exportStatus?.url || exportStatus?.downloadUrl || exportStatus?.pptxUrl || extractUrls(exportStatus).pptxUrl;
+            break;
           }
-        } else if (exportData.url || exportData.downloadUrl) {
-          pptxUrl = exportData.url || exportData.downloadUrl;
+
+          if (["failed", "error", "cancelled", "canceled"].includes(exportState)) {
+            throw new Error(
+              `Gamma falhou ao exportar PPTX: ${
+                exportStatus?.message || exportStatus?.error || exportState
+              }`
+            );
+          }
         }
-      } catch (exportErr) {
-        console.error("Gamma export request failed");
+      } else {
+        pptxUrl = exportData?.url || exportData?.downloadUrl || extractUrls(exportData).pptxUrl;
       }
     }
 
-    return new Response(
-      JSON.stringify({ gammaUrl, pptxUrl, pdfUrl }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ gammaUrl, pptxUrl, pdfUrl }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error("Error generating Gamma slides");
-    return new Response(JSON.stringify({ error: "Erro ao gerar slides" }), {
+    const message = error instanceof Error ? error.message : "Erro ao gerar slides";
+    console.error("Error generating Gamma slides:", message);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
