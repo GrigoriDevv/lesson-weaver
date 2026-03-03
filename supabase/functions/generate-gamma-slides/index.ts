@@ -58,6 +58,7 @@ const extractUrls = (payload: any): GammaUrls => ({
     payload?.downloadUrl?.pptx ??
     payload?.exports?.pptx?.url ??
     payload?.downloads?.pptx ??
+    payload?.exportedFileUrl ??
     null,
   pdfUrl:
     payload?.pdfUrl ??
@@ -144,6 +145,7 @@ serve(async (req) => {
         textMode: "preserve",
         format: "presentation",
         numCards: Math.min(sections.length + 2, 15),
+        exportAs: "pptx",
         sharingOptions: {
           externalAccess: "view",
           workspaceAccess: "view",
@@ -213,60 +215,7 @@ serve(async (req) => {
       throw new Error("O Gamma demorou demais para finalizar a geração. Tente novamente.");
     }
 
-    let { gammaUrl, pptxUrl, pdfUrl } = extractUrls(result);
-
-    if (!pptxUrl) {
-      const exportResponse = await fetch(
-        `https://public-api.gamma.app/v1.0/generations/${generationId}/export`,
-        {
-          method: "POST",
-          headers: buildGammaHeaders(GAMMA_API_KEY, true),
-          body: JSON.stringify({ format: "pptx" }),
-        }
-      );
-
-      const exportData = await getResponseBody(exportResponse);
-      if (!exportResponse.ok) {
-        throw new Error(
-          `Falha ao exportar PPTX no Gamma (${exportResponse.status}): ${
-            exportData?.message || exportData?.error || exportData?.raw || "erro desconhecido"
-          }`
-        );
-      }
-
-      const exportId = exportData?.exportId || exportData?.id;
-
-      if (exportId) {
-        for (let j = 0; j < 30; j++) {
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-
-          const exportStatusResponse = await fetch(
-            `https://public-api.gamma.app/v1.0/generations/${generationId}/export/${exportId}`,
-            { headers: buildGammaHeaders(GAMMA_API_KEY) }
-          );
-
-          const exportStatus = await getResponseBody(exportStatusResponse);
-          if (!exportStatusResponse.ok) continue;
-
-          const exportState = extractStatus(exportStatus);
-          if (["completed", "complete", "succeeded", "success", "ready"].includes(exportState)) {
-            pptxUrl =
-              exportStatus?.url || exportStatus?.downloadUrl || exportStatus?.pptxUrl || extractUrls(exportStatus).pptxUrl;
-            break;
-          }
-
-          if (["failed", "error", "cancelled", "canceled"].includes(exportState)) {
-            throw new Error(
-              `Gamma falhou ao exportar PPTX: ${
-                exportStatus?.message || exportStatus?.error || exportState
-              }`
-            );
-          }
-        }
-      } else {
-        pptxUrl = exportData?.url || exportData?.downloadUrl || extractUrls(exportData).pptxUrl;
-      }
-    }
+    const { gammaUrl, pptxUrl, pdfUrl } = extractUrls(result);
 
     return new Response(JSON.stringify({ gammaUrl, pptxUrl, pdfUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
