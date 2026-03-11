@@ -312,7 +312,7 @@ const LessonPlanner: React.FC = () => {
               style={{ display: "inline", marginRight: "0.8rem" }}
               color="black"
             />
-            ClassBuddy
+            Fazendo Sua Aula
           </Title>
           <Subtitle>
             Crie planos de aula estruturados e personalizados em segundos

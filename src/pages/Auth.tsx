@@ -74,7 +74,7 @@ const Auth = () => {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             margin: 0,
-          }}>ClassBuddy</h1>
+          }}>Fazendo Sua Aula</h1>
           <p style={{ color: 'hsla(230, 20%, 65%, 0.8)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
             {isLogin ? 'Entre na sua conta' : 'Crie sua conta'}
           </p>
