@@ -125,11 +125,11 @@ serve(async (req) => {
     inputText += `## Objetivo\n${objective}\n\n`;
 
     sections.forEach((section: Section, index: number) => {
-      inputText += `## ${index + 1}. ${section.title} (${section.duration} min)\n`;
+      inputText += `## ${index + 1}. ${section.title}\n`;
       inputText += `${section.content}\n\n`;
 
       if (section.activities && section.activities.length > 0) {
-        inputText += `### Atividades Práticas\n`;
+        inputText += `### Atividades\n`;
         section.activities.forEach((activity: string) => {
           inputText += `- ${activity}\n`;
         });
