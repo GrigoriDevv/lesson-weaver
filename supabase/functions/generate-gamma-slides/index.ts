@@ -151,19 +151,19 @@ serve(async (req) => {
           workspaceAccess: "view",
         },
         additionalInstructions:
-          "IMPORTANTE: Todo o conteúdo DEVE estar em português do Brasil. Não traduza NADA para inglês.",
+          "IMPORTANTE: Todo o conteúdo DEVE estar em português do Brasil. Não traduza NADA para inglês. NÃO inclua informações de tempo ou duração nos slides. Use um design visual sofisticado, formal e acadêmico, adequado para apresentações de graduação universitária. Utilize tipografia elegante, paleta de cores sóbria (tons escuros, azul-marinho, dourado, branco), layout limpo e profissional com bastante espaço negativo.",
         textOptions: {
           language: "pt-br",
           amount: "detailed",
-          tone: "didático, profissional",
-          audience: "professores e alunos brasileiros",
+          tone: "formal, acadêmico, sofisticado",
+          audience: "professores e estudantes universitários de graduação",
         },
         cardOptions: {
           dimensions: "16x9",
         },
         imageOptions: {
           source: "aiGenerated",
-          style: "educacional, moderno, limpo",
+          style: "acadêmico, formal, elegante, minimalista, universitário",
         },
       }),
     });
