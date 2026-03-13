@@ -123,9 +123,9 @@ const LessonPlanner: React.FC = () => {
     }
   };
 
-  const handleDownloadPptx = () => {
+  const handleDownloadPptx = async () => {
     if (!lessonPlan) return;
-    generatePptx(lessonPlan);
+    await generatePptx(lessonPlan);
   };
 
   const handleDownloadLocalPDF = () => {
