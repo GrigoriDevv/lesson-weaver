@@ -1,288 +1,356 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- pptxgenjs API uses loose types; consider narrowing when library types improve */
+/* eslint-disable @typescript-eslint/no-explicit-any -- pptxgenjs API uses loose types */
 import PptxGenJS from "pptxgenjs";
 import { LessonPlan } from "@/components/LessonPlanner/types";
 
-// Palette
-const DEEP_NAVY = "1B2A4A";
-const ROYAL_BLUE = "2E5090";
-const VIVID_BLUE = "4A90D9";
-const SOFT_BLUE = "6BB5F0";
-const TEAL = "1ABC9C";
-const AMBER = "F5A623";
-const CORAL = "E74C3C";
+// ─── Formal Academic Palette ────────────────────────────────────────────────
+const NAVY = "0D1B2A";
+const DARK_NAVY = "1B2838";
+const SLATE = "1B3A5C";
+const GOLD = "C9A84C";
+const DARK_GOLD = "A68A3E";
+const CREAM = "FAF8F0";
+const WARM_WHITE = "FFFEF9";
 const WHITE = "FFFFFF";
-const OFF_WHITE = "F8FAFC";
-const LIGHT_GRAY = "E2E8F0";
-const DARK_TEXT = "1E293B";
-const MEDIUM_TEXT = "475569";
-const MUTED_TEXT = "94A3B8";
-
-// Section accent colors for variety
-const SECTION_COLORS = [
-  "2E5090", "1ABC9C", "E67E22", "9B59B6", "E74C3C",
-  "3498DB", "27AE60", "F39C12", "8E44AD", "16A085",
+const CHARCOAL = "2C3E50";
+const DARK_TEXT = "1A1A2E";
+const BODY_TEXT = "3D4F5F";
+const MUTED = "7F8C9B";
+const BORDER_LIGHT = "D4CFC0";
+const SECTION_ACCENTS = [
+  "1B3A5C", "2D6A4F", "6C3D1F", "4A3B6B", "8B3A3A",
+  "1F5F7A", "3B6B3D", "7A5C1F", "5A3B7A", "1A6B5C",
 ];
 
-function addFooter(slide: PptxGenJS.Slide) {
+// ─── Subject → Image Keyword Map ────────────────────────────────────────────
+const SUBJECT_IMAGE_KEYWORDS: Record<string, string[]> = {
+  matematica: ["mathematics", "geometry", "equations"],
+  matemática: ["mathematics", "geometry", "equations"],
+  fisica: ["physics", "science-lab", "universe"],
+  física: ["physics", "science-lab", "universe"],
+  quimica: ["chemistry", "laboratory", "molecules"],
+  química: ["chemistry", "laboratory", "molecules"],
+  biologia: ["biology", "nature", "microscope"],
+  historia: ["history", "ancient", "library"],
+  história: ["history", "ancient", "library"],
+  geografia: ["geography", "globe", "landscape"],
+  portugues: ["books", "literature", "writing"],
+  português: ["books", "literature", "writing"],
+  literatura: ["books", "literature", "classic-library"],
+  ingles: ["english", "language", "communication"],
+  inglês: ["english", "language", "communication"],
+  arte: ["art", "painting", "museum"],
+  filosofia: ["philosophy", "thinking", "ancient-greece"],
+  sociologia: ["sociology", "society", "community"],
+  educação: ["education", "university", "classroom"],
+  ciencias: ["science", "research", "laboratory"],
+  ciências: ["science", "research", "laboratory"],
+  tecnologia: ["technology", "computer", "digital"],
+  programação: ["coding", "programming", "computer-science"],
+  medicina: ["medicine", "health", "hospital"],
+  direito: ["law", "justice", "court"],
+  economia: ["economics", "finance", "market"],
+  psicologia: ["psychology", "mind", "brain"],
+  musica: ["music", "instruments", "concert"],
+  música: ["music", "instruments", "concert"],
+};
+
+function getImageKeywords(subject: string): string[] {
+  const lower = subject.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  for (const [key, keywords] of Object.entries(SUBJECT_IMAGE_KEYWORDS)) {
+    const normalizedKey = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (lower.includes(normalizedKey)) return keywords;
+  }
+  return ["education", "university", "academic"];
+}
+
+async function fetchImageAsBase64(keyword: string, width = 800, height = 600): Promise<string | null> {
+  try {
+    const url = `https://source.unsplash.com/${width}x${height}/?${encodeURIComponent(keyword)},academic`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function fetchThematicImages(subject: string): Promise<(string | null)[]> {
+  const keywords = getImageKeywords(subject);
+  const promises = keywords.map((kw) => fetchImageAsBase64(kw, 800, 500));
+  return Promise.all(promises);
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function addAcademicFooter(slide: PptxGenJS.Slide) {
+  // Thin gold line
   slide.addShape("rect" as any, {
-    x: 0, y: 6.85, w: "100%", h: 0.65,
-    fill: { type: "solid", color: DEEP_NAVY },
+    x: 0.8, y: 6.78, w: 11.6, h: 0.015,
+    fill: { type: "solid", color: GOLD },
   });
   slide.addText("ClassBuddy", {
-    x: 0.6, y: 6.92, w: 3, h: 0.45,
-    fontSize: 10, bold: true, color: SOFT_BLUE, fontFace: "Segoe UI",
+    x: 0.8, y: 6.88, w: 3, h: 0.4,
+    fontSize: 9, bold: true, color: GOLD, fontFace: "Georgia",
+    italic: true,
   });
-  slide.addText(new Date().toLocaleDateString("pt-BR"), {
-    x: 9.5, y: 6.92, w: 3, h: 0.45,
-    fontSize: 9, color: MUTED_TEXT, fontFace: "Segoe UI", align: "right",
+  slide.addText(new Date().toLocaleDateString("pt-BR", { year: "numeric", month: "long", day: "numeric" }), {
+    x: 9, y: 6.88, w: 3.4, h: 0.4,
+    fontSize: 8, color: MUTED, fontFace: "Georgia", align: "right",
   });
 }
 
-function addDecoCircles(slide: PptxGenJS.Slide, pptx: PptxGenJS) {
-  slide.addShape(pptx.ShapeType.ellipse, {
-    x: 11.0, y: -0.8, w: 3, h: 3,
-    fill: { type: "solid", color: VIVID_BLUE }, transparency: 85,
-  } as any);
-  slide.addShape(pptx.ShapeType.ellipse, {
-    x: 10.2, y: 5.0, w: 2.5, h: 2.5,
-    fill: { type: "solid", color: TEAL }, transparency: 88,
-  } as any);
+function addSideAccent(slide: PptxGenJS.Slide, color: string) {
+  slide.addShape("rect" as any, {
+    x: 0, y: 0, w: 0.06, h: "100%" as any,
+    fill: { type: "solid", color },
+  });
+  // Small gold detail at top
+  slide.addShape("rect" as any, {
+    x: 0.06, y: 0, w: 0.03, h: 1.2,
+    fill: { type: "solid", color: GOLD },
+  });
 }
 
-export function generatePptx(lessonPlan: LessonPlan): void {
+function addImageToSlide(slide: PptxGenJS.Slide, imageData: string | null, x: number, y: number, w: number, h: number, pptx: PptxGenJS) {
+  if (imageData) {
+    // Rounded clip container
+    slide.addShape(pptx.ShapeType.roundRect, {
+      x, y, w, h,
+      fill: { type: "solid", color: BORDER_LIGHT },
+      rectRadius: 0.08,
+    });
+    slide.addImage({
+      data: imageData,
+      x: x + 0.04, y: y + 0.04, w: w - 0.08, h: h - 0.08,
+      rounding: true,
+    } as any);
+  } else {
+    // Decorative placeholder
+    slide.addShape(pptx.ShapeType.roundRect, {
+      x, y, w, h,
+      fill: { type: "solid", color: SLATE }, transparency: 88,
+      rectRadius: 0.08,
+      line: { color: GOLD, width: 0.5 },
+    } as any);
+  }
+}
+
+// ─── Main Export ─────────────────────────────────────────────────────────────
+
+export async function generatePptx(lessonPlan: LessonPlan): Promise<void> {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE";
   pptx.author = "ClassBuddy";
   pptx.title = lessonPlan.subject || "Plano de Aula";
 
+  // Fetch thematic images in parallel
+  const images = await fetchThematicImages(lessonPlan.subject || "educação");
+
   // ═══════════════════════════════════════════
-  // SLIDE 1 — COVER
+  // SLIDE 1 — COVER (Formal Academic)
   // ═══════════════════════════════════════════
   const cover = pptx.addSlide();
-  cover.background = { color: DEEP_NAVY };
+  cover.background = { color: NAVY };
 
-  // Large decorative shapes
-  cover.addShape(pptx.ShapeType.ellipse, {
-    x: -2, y: -2, w: 7, h: 7,
-    fill: { type: "solid", color: ROYAL_BLUE }, transparency: 70,
+  // Subtle geometric decoration
+  cover.addShape(pptx.ShapeType.rect, {
+    x: 0, y: 0, w: 0.06, h: "100%" as any,
+    fill: { type: "solid", color: GOLD },
   } as any);
-  cover.addShape(pptx.ShapeType.ellipse, {
-    x: 9, y: 4, w: 5, h: 5,
-    fill: { type: "solid", color: TEAL }, transparency: 75,
+  cover.addShape(pptx.ShapeType.rect, {
+    x: 0.06, y: 6.0, w: 13, h: 0.008,
+    fill: { type: "solid", color: GOLD }, transparency: 50,
   } as any);
 
-  // Accent line
+  // Cover image on the right
+  addImageToSlide(cover, images[0] || null, 8.2, 0.8, 4.2, 3.2, pptx);
+
+  // Gold accent line above title
   cover.addShape("rect" as any, {
-    x: 0.8, y: 2.6, w: 1.2, h: 0.08,
-    fill: { type: "solid", color: AMBER },
+    x: 0.8, y: 2.3, w: 1.5, h: 0.04,
+    fill: { type: "solid", color: GOLD },
   });
 
   // Subject title
   cover.addText(lessonPlan.subject || "Plano de Aula", {
-    x: 0.8, y: 2.85, w: 9, h: 1.4,
-    fontSize: 44, bold: true, color: WHITE, fontFace: "Segoe UI",
-    lineSpacingMultiple: 1.1,
+    x: 0.8, y: 2.6, w: 7, h: 1.5,
+    fontSize: 40, bold: true, color: WHITE, fontFace: "Georgia",
+    lineSpacingMultiple: 1.15,
   });
 
-  // Objective
+  // Objective subtitle
   cover.addText(lessonPlan.objective, {
-    x: 0.8, y: 4.3, w: 8, h: 1.0,
-    fontSize: 16, color: MUTED_TEXT, fontFace: "Segoe UI",
-    lineSpacingMultiple: 1.4,
+    x: 0.8, y: 4.3, w: 7, h: 1.2,
+    fontSize: 14, color: MUTED, fontFace: "Georgia",
+    lineSpacingMultiple: 1.5, italic: true,
   });
 
-  // Info chips
-  const chipY = 5.7;
+  // Bottom info
   cover.addShape(pptx.ShapeType.roundRect, {
-    x: 0.8, y: chipY, w: 2.4, h: 0.5,
-    fill: { type: "solid", color: ROYAL_BLUE }, rectRadius: 0.15,
+    x: 0.8, y: 5.8, w: 2.6, h: 0.42,
+    fill: { type: "solid", color: GOLD }, rectRadius: 0.04,
   });
-  cover.addText(`⏱  ${lessonPlan.totalDuration} minutos`, {
-    x: 0.8, y: chipY, w: 2.4, h: 0.5,
-    fontSize: 11, bold: true, color: WHITE, fontFace: "Segoe UI",
+  cover.addText(`${lessonPlan.sections.length} seções`, {
+    x: 0.8, y: 5.8, w: 2.6, h: 0.42,
+    fontSize: 11, bold: true, color: NAVY, fontFace: "Georgia",
     align: "center", valign: "middle",
   });
 
-  cover.addShape(pptx.ShapeType.roundRect, {
-    x: 3.5, y: chipY, w: 2.4, h: 0.5,
-    fill: { type: "solid", color: TEAL }, rectRadius: 0.15,
-  });
-  cover.addText(`📚  ${lessonPlan.sections.length} seções`, {
-    x: 3.5, y: chipY, w: 2.4, h: 0.5,
-    fontSize: 11, bold: true, color: WHITE, fontFace: "Segoe UI",
-    align: "center", valign: "middle",
-  });
-
-  addFooter(cover);
+  addAcademicFooter(cover);
 
   // ═══════════════════════════════════════════
   // SLIDE 2 — OBJECTIVE
   // ═══════════════════════════════════════════
   const objSlide = pptx.addSlide();
-  objSlide.background = { color: OFF_WHITE };
-  addDecoCircles(objSlide, pptx);
+  objSlide.background = { color: CREAM };
+  addSideAccent(objSlide, NAVY);
 
-  // Left accent bar
-  objSlide.addShape("rect" as any, {
-    x: 0, y: 0, w: 0.12, h: "100%" as any,
-    fill: { type: "solid", color: VIVID_BLUE },
-  });
-
-  // Section label
   objSlide.addText("OBJETIVO DA AULA", {
-    x: 0.8, y: 0.5, w: 6, h: 0.4,
-    fontSize: 11, bold: true, color: VIVID_BLUE, fontFace: "Segoe UI",
-    charSpacing: 3,
+    x: 0.8, y: 0.5, w: 6, h: 0.35,
+    fontSize: 10, bold: true, color: GOLD, fontFace: "Georgia",
+    charSpacing: 4,
   });
 
-  // Icon
-  objSlide.addText("🎯", {
-    x: 0.8, y: 1.2, w: 1, h: 1,
-    fontSize: 48,
-  });
-
-  // Objective text
-  objSlide.addText(lessonPlan.objective, {
-    x: 2.2, y: 1.3, w: 8.5, h: 2.5,
-    fontSize: 22, color: DARK_TEXT, fontFace: "Segoe UI",
-    lineSpacingMultiple: 1.5,
-  });
-
-  // Divider
+  // Gold divider
   objSlide.addShape("rect" as any, {
-    x: 0.8, y: 4.2, w: 10.5, h: 0.02,
-    fill: { type: "solid", color: LIGHT_GRAY },
+    x: 0.8, y: 0.95, w: 2.5, h: 0.025,
+    fill: { type: "solid", color: GOLD },
   });
 
-  // Overview grid
-  const gridStartX = 0.8;
-  const gridY = 4.6;
-  const cardW = 3.3;
+  objSlide.addText(lessonPlan.objective, {
+    x: 0.8, y: 1.4, w: 7, h: 2.5,
+    fontSize: 20, color: DARK_TEXT, fontFace: "Georgia",
+    lineSpacingMultiple: 1.6, italic: true,
+  });
+
+  // Image on right
+  addImageToSlide(objSlide, images[1] || images[0] || null, 8.5, 1.2, 3.5, 2.8, pptx);
+
+  // Overview cards
+  objSlide.addShape("rect" as any, {
+    x: 0.8, y: 4.3, w: 11.4, h: 0.015,
+    fill: { type: "solid", color: BORDER_LIGHT },
+  });
+
+  const cardW = 3.5;
   lessonPlan.sections.slice(0, 3).forEach((section, i) => {
-    const cx = gridStartX + i * (cardW + 0.3);
+    const cx = 0.8 + i * (cardW + 0.3);
     objSlide.addShape(pptx.ShapeType.roundRect, {
-      x: cx, y: gridY, w: cardW, h: 1.6,
-      fill: { type: "solid", color: WHITE },
-      shadow: { type: "outer", blur: 6, offset: 2, color: "000000", opacity: 0.08 } as any,
-      rectRadius: 0.12,
+      x: cx, y: 4.6, w: cardW, h: 1.5,
+      fill: { type: "solid", color: WARM_WHITE },
+      shadow: { type: "outer", blur: 3, offset: 1, color: "000000", opacity: 0.05 } as any,
+      rectRadius: 0.08,
+      line: { color: BORDER_LIGHT, width: 0.5 },
+    } as any);
+    // Number circle
+    objSlide.addShape(pptx.ShapeType.ellipse, {
+      x: cx + 0.15, y: 4.75, w: 0.35, h: 0.35,
+      fill: { type: "solid", color: SECTION_ACCENTS[i % SECTION_ACCENTS.length] },
     });
     objSlide.addText(`${i + 1}`, {
-      x: cx + 0.15, y: gridY + 0.15, w: 0.4, h: 0.4,
-      fontSize: 12, bold: true, color: WHITE, fontFace: "Segoe UI",
+      x: cx + 0.15, y: 4.75, w: 0.35, h: 0.35,
+      fontSize: 11, bold: true, color: WHITE, fontFace: "Georgia",
       align: "center", valign: "middle",
-      fill: { type: "solid", color: SECTION_COLORS[i % SECTION_COLORS.length] } as any,
     });
     objSlide.addText(section.title, {
-      x: cx + 0.65, y: gridY + 0.15, w: cardW - 0.85, h: 0.4,
-      fontSize: 11, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
-    });
-    objSlide.addText(`${section.duration} min`, {
-      x: cx + 0.15, y: gridY + 1.1, w: cardW - 0.3, h: 0.35,
-      fontSize: 10, color: MUTED_TEXT, fontFace: "Segoe UI",
+      x: cx + 0.6, y: 4.75, w: cardW - 0.8, h: 0.5,
+      fontSize: 11, bold: true, color: DARK_TEXT, fontFace: "Georgia",
     });
   });
 
-  addFooter(objSlide);
+  addAcademicFooter(objSlide);
 
   // ═══════════════════════════════════════════
   // CONTENT SLIDES
   // ═══════════════════════════════════════════
-  const sectionIcons = ["📖", "💡", "🔬", "🛠", "🧪", "📊", "🎨", "🌐", "⚡", "🏗"];
-
   lessonPlan.sections.forEach((section, index) => {
     const slide = pptx.addSlide();
-    const accentColor = SECTION_COLORS[index % SECTION_COLORS.length];
-    const icon = sectionIcons[index % sectionIcons.length];
+    const accent = SECTION_ACCENTS[index % SECTION_ACCENTS.length];
+    const sectionImage = images[index % images.length];
 
-    slide.background = { color: OFF_WHITE };
-
-    // Left accent bar
-    slide.addShape("rect" as any, {
-      x: 0, y: 0, w: 0.12, h: "100%" as any,
-      fill: { type: "solid", color: accentColor },
-    });
-
-    // Top-right decorative circle
-    slide.addShape(pptx.ShapeType.ellipse, {
-      x: 11.2, y: -0.6, w: 2, h: 2,
-      fill: { type: "solid", color: accentColor }, transparency: 90,
-    } as any);
+    slide.background = { color: CREAM };
+    addSideAccent(slide, accent);
 
     // Section label
-    slide.addText(`SEÇÃO ${index + 1} DE ${lessonPlan.sections.length}`, {
-      x: 0.8, y: 0.4, w: 6, h: 0.35,
-      fontSize: 10, bold: true, color: accentColor, fontFace: "Segoe UI",
-      charSpacing: 3,
+    slide.addText(`SEÇÃO ${index + 1}`, {
+      x: 0.8, y: 0.4, w: 6, h: 0.3,
+      fontSize: 9, bold: true, color: GOLD, fontFace: "Georgia",
+      charSpacing: 4,
     });
 
-    // Section title with icon
-    slide.addText(`${icon}  ${section.title}`, {
-      x: 0.8, y: 0.85, w: 9, h: 0.7,
-      fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+    // Section title
+    slide.addText(section.title, {
+      x: 0.8, y: 0.8, w: 8, h: 0.7,
+      fontSize: 26, bold: true, color: DARK_TEXT, fontFace: "Georgia",
     });
 
-    // Duration badge
-    slide.addShape(pptx.ShapeType.roundRect, {
-      x: 10.4, y: 0.85, w: 1.8, h: 0.5,
-      fill: { type: "solid", color: accentColor }, rectRadius: 0.15,
-    });
-    slide.addText(`⏱ ${section.duration} min`, {
-      x: 10.4, y: 0.85, w: 1.8, h: 0.5,
-      fontSize: 11, bold: true, color: WHITE, fontFace: "Segoe UI",
-      align: "center", valign: "middle",
-    });
-
-    // Divider
+    // Gold divider
     slide.addShape("rect" as any, {
-      x: 0.8, y: 1.7, w: 10.5, h: 0.02,
-      fill: { type: "solid", color: LIGHT_GRAY },
+      x: 0.8, y: 1.55, w: 3, h: 0.025,
+      fill: { type: "solid", color: GOLD },
     });
 
-    // Content card
-    slide.addShape(pptx.ShapeType.roundRect, {
-      x: 0.8, y: 1.95, w: 10.5, h: 2.6,
-      fill: { type: "solid", color: WHITE },
-      shadow: { type: "outer", blur: 4, offset: 1, color: "000000", opacity: 0.06 } as any,
-      rectRadius: 0.1,
-    });
-    slide.addText(section.content, {
-      x: 1.1, y: 2.1, w: 10, h: 2.3,
-      fontSize: 15, color: MEDIUM_TEXT, fontFace: "Segoe UI",
-      lineSpacingMultiple: 1.6, valign: "top",
-    });
-
-    // Activities section
-    if (section.activities && section.activities.length > 0) {
-      const actY = 4.8;
-
-      // Activities card
+    // Content area — if image available, use 2-column layout
+    if (sectionImage) {
+      // Text on left
+      slide.addText(section.content, {
+        x: 0.8, y: 1.85, w: 7, h: 2.6,
+        fontSize: 14, color: BODY_TEXT, fontFace: "Georgia",
+        lineSpacingMultiple: 1.65, valign: "top",
+      });
+      // Image on right
+      addImageToSlide(slide, sectionImage, 8.2, 1.85, 4, 2.6, pptx);
+    } else {
+      // Full-width content card
       slide.addShape(pptx.ShapeType.roundRect, {
-        x: 0.8, y: actY, w: 10.5, h: 0.45 + section.activities.length * 0.42,
-        fill: { type: "solid", color: accentColor }, transparency: 92,
-        rectRadius: 0.1,
-        line: { color: accentColor, width: 1, dashType: "solid" },
+        x: 0.8, y: 1.85, w: 11.4, h: 2.6,
+        fill: { type: "solid", color: WARM_WHITE },
+        shadow: { type: "outer", blur: 3, offset: 1, color: "000000", opacity: 0.04 } as any,
+        rectRadius: 0.08,
+      });
+      slide.addText(section.content, {
+        x: 1.1, y: 2.0, w: 10.8, h: 2.3,
+        fontSize: 14, color: BODY_TEXT, fontFace: "Georgia",
+        lineSpacingMultiple: 1.65, valign: "top",
+      });
+    }
+
+    // Activities
+    if (section.activities && section.activities.length > 0) {
+      const actY = 4.7;
+      slide.addShape(pptx.ShapeType.roundRect, {
+        x: 0.8, y: actY, w: 11.4, h: 0.42 + section.activities.length * 0.4,
+        fill: { type: "solid", color: WARM_WHITE },
+        rectRadius: 0.08,
+        line: { color: GOLD, width: 0.8 },
       } as any);
 
-      slide.addText("✏️  Atividades Práticas", {
-        x: 1.1, y: actY + 0.08, w: 6, h: 0.35,
-        fontSize: 12, bold: true, color: accentColor, fontFace: "Segoe UI",
+      slide.addText("Atividades", {
+        x: 1.1, y: actY + 0.06, w: 6, h: 0.32,
+        fontSize: 11, bold: true, color: GOLD, fontFace: "Georgia",
+        charSpacing: 2,
       });
 
       section.activities.forEach((activity, idx) => {
-        const ay = actY + 0.45 + idx * 0.42;
-        // Bullet dot
-        slide.addShape(pptx.ShapeType.ellipse, {
-          x: 1.2, y: ay + 0.08, w: 0.12, h: 0.12,
-          fill: { type: "solid", color: accentColor },
+        const ay = actY + 0.42 + idx * 0.4;
+        slide.addText("—", {
+          x: 1.2, y: ay, w: 0.3, h: 0.35,
+          fontSize: 12, color: GOLD, fontFace: "Georgia",
         });
         slide.addText(activity, {
-          x: 1.5, y: ay, w: 9.5, h: 0.38,
-          fontSize: 13, color: DARK_TEXT, fontFace: "Segoe UI", valign: "middle",
+          x: 1.5, y: ay, w: 10.4, h: 0.35,
+          fontSize: 12, color: DARK_TEXT, fontFace: "Georgia", valign: "middle",
         });
       });
     }
 
-    addFooter(slide);
+    addAcademicFooter(slide);
   });
 
   // ═══════════════════════════════════════════
@@ -290,43 +358,28 @@ export function generatePptx(lessonPlan: LessonPlan): void {
   // ═══════════════════════════════════════════
   if (lessonPlan.methodology) {
     const methSlide = pptx.addSlide();
-    methSlide.background = { color: OFF_WHITE };
-    addDecoCircles(methSlide, pptx);
-
-    methSlide.addShape("rect" as any, {
-      x: 0, y: 0, w: 0.12, h: "100%" as any,
-      fill: { type: "solid", color: TEAL },
-    });
+    methSlide.background = { color: CREAM };
+    addSideAccent(methSlide, SLATE);
 
     methSlide.addText("METODOLOGIA", {
       x: 0.8, y: 0.4, w: 6, h: 0.35,
-      fontSize: 11, bold: true, color: TEAL, fontFace: "Segoe UI",
-      charSpacing: 3,
+      fontSize: 10, bold: true, color: GOLD, fontFace: "Georgia",
+      charSpacing: 4,
     });
-
-    methSlide.addText("🧭  Abordagem Pedagógica", {
+    methSlide.addText("Abordagem Pedagógica", {
       x: 0.8, y: 0.85, w: 9, h: 0.6,
-      fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+      fontSize: 26, bold: true, color: DARK_TEXT, fontFace: "Georgia",
     });
-
     methSlide.addShape("rect" as any, {
-      x: 0.8, y: 1.6, w: 10.5, h: 0.02,
-      fill: { type: "solid", color: LIGHT_GRAY },
-    });
-
-    methSlide.addShape(pptx.ShapeType.roundRect, {
-      x: 0.8, y: 1.85, w: 10.5, h: 4.5,
-      fill: { type: "solid", color: WHITE },
-      shadow: { type: "outer", blur: 4, offset: 1, color: "000000", opacity: 0.06 } as any,
-      rectRadius: 0.1,
+      x: 0.8, y: 1.5, w: 3, h: 0.025,
+      fill: { type: "solid", color: GOLD },
     });
     methSlide.addText(lessonPlan.methodology, {
-      x: 1.1, y: 2.0, w: 10, h: 4.2,
-      fontSize: 16, color: MEDIUM_TEXT, fontFace: "Segoe UI",
-      lineSpacingMultiple: 1.6, valign: "top",
+      x: 0.8, y: 1.8, w: 11.4, h: 4.5,
+      fontSize: 15, color: BODY_TEXT, fontFace: "Georgia",
+      lineSpacingMultiple: 1.65, valign: "top",
     });
-
-    addFooter(methSlide);
+    addAcademicFooter(methSlide);
   }
 
   // ═══════════════════════════════════════════
@@ -334,43 +387,28 @@ export function generatePptx(lessonPlan: LessonPlan): void {
   // ═══════════════════════════════════════════
   if (lessonPlan.evaluation) {
     const evalSlide = pptx.addSlide();
-    evalSlide.background = { color: OFF_WHITE };
-    addDecoCircles(evalSlide, pptx);
-
-    evalSlide.addShape("rect" as any, {
-      x: 0, y: 0, w: 0.12, h: "100%" as any,
-      fill: { type: "solid", color: CORAL },
-    });
+    evalSlide.background = { color: CREAM };
+    addSideAccent(evalSlide, "8B3A3A");
 
     evalSlide.addText("AVALIAÇÃO", {
       x: 0.8, y: 0.4, w: 6, h: 0.35,
-      fontSize: 11, bold: true, color: CORAL, fontFace: "Segoe UI",
-      charSpacing: 3,
+      fontSize: 10, bold: true, color: GOLD, fontFace: "Georgia",
+      charSpacing: 4,
     });
-
-    evalSlide.addText("📝  Critérios de Avaliação", {
+    evalSlide.addText("Critérios de Avaliação", {
       x: 0.8, y: 0.85, w: 9, h: 0.6,
-      fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+      fontSize: 26, bold: true, color: DARK_TEXT, fontFace: "Georgia",
     });
-
     evalSlide.addShape("rect" as any, {
-      x: 0.8, y: 1.6, w: 10.5, h: 0.02,
-      fill: { type: "solid", color: LIGHT_GRAY },
-    });
-
-    evalSlide.addShape(pptx.ShapeType.roundRect, {
-      x: 0.8, y: 1.85, w: 10.5, h: 4.5,
-      fill: { type: "solid", color: WHITE },
-      shadow: { type: "outer", blur: 4, offset: 1, color: "000000", opacity: 0.06 } as any,
-      rectRadius: 0.1,
+      x: 0.8, y: 1.5, w: 3, h: 0.025,
+      fill: { type: "solid", color: GOLD },
     });
     evalSlide.addText(lessonPlan.evaluation, {
-      x: 1.1, y: 2.0, w: 10, h: 4.2,
-      fontSize: 16, color: MEDIUM_TEXT, fontFace: "Segoe UI",
-      lineSpacingMultiple: 1.6, valign: "top",
+      x: 0.8, y: 1.8, w: 11.4, h: 4.5,
+      fontSize: 15, color: BODY_TEXT, fontFace: "Georgia",
+      lineSpacingMultiple: 1.65, valign: "top",
     });
-
-    addFooter(evalSlide);
+    addAcademicFooter(evalSlide);
   }
 
   // ═══════════════════════════════════════════
@@ -378,135 +416,122 @@ export function generatePptx(lessonPlan: LessonPlan): void {
   // ═══════════════════════════════════════════
   if (lessonPlan.resources && lessonPlan.resources.length > 0) {
     const resSlide = pptx.addSlide();
-    resSlide.background = { color: OFF_WHITE };
-    addDecoCircles(resSlide, pptx);
-
-    resSlide.addShape("rect" as any, {
-      x: 0, y: 0, w: 0.12, h: "100%" as any,
-      fill: { type: "solid", color: AMBER },
-    });
+    resSlide.background = { color: CREAM };
+    addSideAccent(resSlide, DARK_GOLD);
 
     resSlide.addText("RECURSOS E MATERIAIS", {
       x: 0.8, y: 0.4, w: 6, h: 0.35,
-      fontSize: 11, bold: true, color: AMBER, fontFace: "Segoe UI",
-      charSpacing: 3,
+      fontSize: 10, bold: true, color: GOLD, fontFace: "Georgia",
+      charSpacing: 4,
     });
-
-    resSlide.addText("📚  Materiais Necessários", {
+    resSlide.addText("Materiais Necessários", {
       x: 0.8, y: 0.85, w: 9, h: 0.6,
-      fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+      fontSize: 26, bold: true, color: DARK_TEXT, fontFace: "Georgia",
     });
-
     resSlide.addShape("rect" as any, {
-      x: 0.8, y: 1.6, w: 10.5, h: 0.02,
-      fill: { type: "solid", color: LIGHT_GRAY },
-    });
-
-    resSlide.addShape(pptx.ShapeType.roundRect, {
-      x: 0.8, y: 1.85, w: 10.5, h: 0.6 + lessonPlan.resources.length * 0.5,
-      fill: { type: "solid", color: WHITE },
-      shadow: { type: "outer", blur: 4, offset: 1, color: "000000", opacity: 0.06 } as any,
-      rectRadius: 0.1,
+      x: 0.8, y: 1.5, w: 3, h: 0.025,
+      fill: { type: "solid", color: GOLD },
     });
 
     lessonPlan.resources.forEach((resource, idx) => {
-      const ry = 2.1 + idx * 0.5;
-      resSlide.addShape(pptx.ShapeType.ellipse, {
-        x: 1.2, y: ry + 0.08, w: 0.14, h: 0.14,
-        fill: { type: "solid", color: AMBER },
+      const ry = 1.9 + idx * 0.5;
+      resSlide.addText("—", {
+        x: 1.0, y: ry, w: 0.3, h: 0.4,
+        fontSize: 13, color: GOLD, fontFace: "Georgia",
       });
       resSlide.addText(resource, {
-        x: 1.5, y: ry, w: 9.5, h: 0.45,
-        fontSize: 14, color: DARK_TEXT, fontFace: "Segoe UI", valign: "middle",
+        x: 1.4, y: ry, w: 10.5, h: 0.4,
+        fontSize: 14, color: DARK_TEXT, fontFace: "Georgia", valign: "middle",
       });
     });
-
-    addFooter(resSlide);
+    addAcademicFooter(resSlide);
   }
 
   // ═══════════════════════════════════════════
   // SUMMARY SLIDE
   // ═══════════════════════════════════════════
   const summary = pptx.addSlide();
-  summary.background = { color: OFF_WHITE };
-  addDecoCircles(summary, pptx);
+  summary.background = { color: CREAM };
+  addSideAccent(summary, NAVY);
 
-  summary.addShape("rect" as any, {
-    x: 0, y: 0, w: 0.12, h: "100%" as any,
-    fill: { type: "solid", color: ROYAL_BLUE },
-  });
-
-  summary.addText("RESUMO DO PLANO", {
+  summary.addText("RESUMO", {
     x: 0.8, y: 0.4, w: 6, h: 0.35,
-    fontSize: 11, bold: true, color: ROYAL_BLUE, fontFace: "Segoe UI",
-    charSpacing: 3,
+    fontSize: 10, bold: true, color: GOLD, fontFace: "Georgia",
+    charSpacing: 4,
   });
-  summary.addText("📋  Visão Geral", {
+  summary.addText("Visão Geral do Plano", {
     x: 0.8, y: 0.85, w: 9, h: 0.6,
-    fontSize: 28, bold: true, color: DARK_TEXT, fontFace: "Segoe UI",
+    fontSize: 26, bold: true, color: DARK_TEXT, fontFace: "Georgia",
+  });
+  summary.addShape("rect" as any, {
+    x: 0.8, y: 1.5, w: 3, h: 0.025,
+    fill: { type: "solid", color: GOLD },
   });
 
   // Summary table
   const headerRow: PptxGenJS.TableRow = [
-    { text: "#", options: { fontSize: 11, bold: true, color: WHITE, fill: { type: "solid" as const, color: ROYAL_BLUE }, align: "center" as const, valign: "middle" as const } },
-    { text: "Seção", options: { fontSize: 11, bold: true, color: WHITE, fill: { type: "solid" as const, color: ROYAL_BLUE }, valign: "middle" as const } },
-    { text: "Duração", options: { fontSize: 11, bold: true, color: WHITE, fill: { type: "solid" as const, color: ROYAL_BLUE }, align: "center" as const, valign: "middle" as const } },
+    { text: "#", options: { fontSize: 11, bold: true, color: WHITE, fill: { type: "solid" as const, color: NAVY }, align: "center" as const, valign: "middle" as const, fontFace: "Georgia" } },
+    { text: "Seção", options: { fontSize: 11, bold: true, color: WHITE, fill: { type: "solid" as const, color: NAVY }, valign: "middle" as const, fontFace: "Georgia" } },
   ];
 
   const dataRows: PptxGenJS.TableRow[] = lessonPlan.sections.map((section, i) => {
-    const rowBg = i % 2 === 0 ? WHITE : "F1F5F9";
-    const accent = SECTION_COLORS[i % SECTION_COLORS.length];
+    const rowBg = i % 2 === 0 ? WARM_WHITE : CREAM;
     return [
-      { text: `${i + 1}`, options: { fontSize: 12, bold: true, color: WHITE, fill: { type: "solid" as const, color: accent }, align: "center" as const, valign: "middle" as const } },
-      { text: section.title, options: { fontSize: 12, color: DARK_TEXT, fill: { type: "solid" as const, color: rowBg }, valign: "middle" as const } },
-      { text: `${section.duration} min`, options: { fontSize: 12, bold: true, color: accent, fill: { type: "solid" as const, color: rowBg }, align: "center" as const, valign: "middle" as const } },
+      { text: `${i + 1}`, options: { fontSize: 11, bold: true, color: GOLD, fill: { type: "solid" as const, color: rowBg }, align: "center" as const, valign: "middle" as const, fontFace: "Georgia" } },
+      { text: section.title, options: { fontSize: 12, color: DARK_TEXT, fill: { type: "solid" as const, color: rowBg }, valign: "middle" as const, fontFace: "Georgia" } },
     ];
   });
 
-  // Total row
-  dataRows.push([
-    { text: "", options: { fill: { type: "solid" as const, color: DEEP_NAVY } } },
-    { text: "TOTAL", options: { fontSize: 13, bold: true, color: WHITE, fill: { type: "solid" as const, color: DEEP_NAVY }, valign: "middle" as const } },
-    { text: `${lessonPlan.totalDuration} min`, options: { fontSize: 14, bold: true, color: AMBER, fill: { type: "solid" as const, color: DEEP_NAVY }, align: "center" as const, valign: "middle" as const } },
-  ]);
-
   summary.addTable([headerRow, ...dataRows], {
-    x: 0.8, y: 1.7, w: 10.5,
-    colW: [0.7, 7.8, 2.0],
-    fontFace: "Segoe UI",
+    x: 0.8, y: 1.8, w: 11.4,
+    colW: [0.7, 10.7],
+    fontFace: "Georgia",
     rowH: 0.55,
-    border: { type: "solid", color: LIGHT_GRAY, pt: 0.5 } as any,
+    border: { type: "solid", color: BORDER_LIGHT, pt: 0.5 } as any,
   });
 
-  addFooter(summary);
+  addAcademicFooter(summary);
 
   // ═══════════════════════════════════════════
   // CLOSING SLIDE
   // ═══════════════════════════════════════════
   const closing = pptx.addSlide();
-  closing.background = { color: DEEP_NAVY };
-  closing.addShape(pptx.ShapeType.ellipse, {
-    x: 4, y: 0.5, w: 5, h: 5,
-    fill: { type: "solid", color: ROYAL_BLUE }, transparency: 75,
-  } as any);
+  closing.background = { color: NAVY };
 
-  closing.addText("Obrigado!", {
-    x: 0, y: 2.2, w: "100%" as any, h: 1.2,
-    fontSize: 48, bold: true, color: WHITE, fontFace: "Segoe UI",
+  // Gold accent
+  closing.addShape("rect" as any, {
+    x: 0, y: 0, w: 0.06, h: "100%" as any,
+    fill: { type: "solid", color: GOLD },
+  });
+  closing.addShape("rect" as any, {
+    x: 4.5, y: 2.8, w: 4.2, h: 0.03,
+    fill: { type: "solid", color: GOLD },
+  });
+
+  closing.addText("Obrigado", {
+    x: 0, y: 2.0, w: "100%" as any, h: 0.9,
+    fontSize: 44, bold: true, color: WHITE, fontFace: "Georgia",
     align: "center",
   });
+
+  closing.addShape("rect" as any, {
+    x: 4.5, y: 3.1, w: 4.2, h: 0.03,
+    fill: { type: "solid", color: GOLD },
+  });
+
   closing.addText(lessonPlan.subject || "Plano de Aula", {
-    x: 0, y: 3.5, w: "100%" as any, h: 0.6,
-    fontSize: 18, color: SOFT_BLUE, fontFace: "Segoe UI",
-    align: "center",
+    x: 0, y: 3.5, w: "100%" as any, h: 0.5,
+    fontSize: 16, color: MUTED, fontFace: "Georgia",
+    align: "center", italic: true,
   });
-  closing.addText("Gerado com ClassBuddy ✨", {
-    x: 0, y: 4.5, w: "100%" as any, h: 0.5,
-    fontSize: 12, color: MUTED_TEXT, fontFace: "Segoe UI",
+
+  closing.addText("Gerado com ClassBuddy", {
+    x: 0, y: 4.5, w: "100%" as any, h: 0.4,
+    fontSize: 10, color: GOLD, fontFace: "Georgia",
     align: "center", italic: true,
   });
 
   // Download
   const fileName = `plano_${(lessonPlan.subject || "aula").replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}`;
-  pptx.writeFile({ fileName });
+  await pptx.writeFile({ fileName });
 }
