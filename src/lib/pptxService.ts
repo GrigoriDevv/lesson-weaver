@@ -475,15 +475,15 @@ export async function generatePptx(lessonPlan: LessonPlan): Promise<void> {
       fill: { type: "solid", color: GOLD },
     });
 
+    addDecorativeImage(resSlide, keyword, 8.5, 1.65, 3.8, 2.2, pptx);
+
     lessonPlan.resources.slice(0, 8).forEach((resource, idx) => {
       const ry = 1.75 + idx * 0.48;
       resSlide.addText(`—  ${resource}`, {
-        x: 0.9, y: ry, w: 11.3, h: 0.4,
+        x: 0.9, y: ry, w: 7.2, h: 0.4,
         fontSize: 13, color: DARK_TEXT, fontFace: "Georgia", valign: "middle",
       });
     });
-
-    addDecorativeImage(resSlide, keyword, 8.5, 1.65, 3.8, 2.2, pptx);
     addAcademicFooter(resSlide);
   }
 
