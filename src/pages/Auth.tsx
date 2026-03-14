@@ -32,13 +32,18 @@ const Auth = () => {
         if (error) throw error;
         navigate('/');
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { full_name: name } },
         });
         if (error) throw error;
-        setSuccess('Conta criada! Verifique seu e-mail para confirmar.');
+        // If auto-confirm is on, user is logged in immediately
+        if (signUpData.session) {
+          navigate('/');
+        } else {
+          setSuccess('Conta criada! Verifique seu e-mail para confirmar.');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao autenticar');
