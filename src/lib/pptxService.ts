@@ -477,7 +477,7 @@ export async function generatePptx(lessonPlan: LessonPlan): Promise<void> {
 
     lessonPlan.resources.slice(0, 8).forEach((resource, idx) => {
       const ry = 1.75 + idx * 0.48;
-      slide.addText(`—  ${resource}`, {
+      resSlide.addText(`—  ${resource}`, {
         x: 0.9, y: ry, w: 11.3, h: 0.4,
         fontSize: 13, color: DARK_TEXT, fontFace: "Georgia", valign: "middle",
       });
